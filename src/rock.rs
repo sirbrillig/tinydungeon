@@ -13,15 +13,16 @@ impl Plugin for RockPlugin {
 
 fn setup_rock(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let shape = meshes.add(Circle::new(50.0));
     let color = Color::hsl(5.0, 0.77, 0.42);
+    let transform = Transform::from_xyz(200.0, 0.0, 0.0);
     commands.spawn((
-        Mesh2d(shape),
-        MeshMaterial2d(materials.add(color)),
-        Transform::from_xyz(200.0, 0.0, 0.0),
+        Sprite {
+            color,
+            custom_size: Some(Vec2::new(200.0, 100.0)),
+            ..default()
+        },
+        transform,
         Rock,
     ));
 }
