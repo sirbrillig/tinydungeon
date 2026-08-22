@@ -11,9 +11,7 @@ impl Plugin for RockPlugin {
     }
 }
 
-fn setup_rock(
-    mut commands: Commands,
-) {
+fn setup_rock(mut commands: Commands) {
     let color = Color::hsl(5.0, 0.77, 0.42);
     let transform = Transform::from_xyz(200.0, 0.0, 0.0);
     commands.spawn((
