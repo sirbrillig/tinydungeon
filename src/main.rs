@@ -1,38 +1,28 @@
-mod physics;
 mod player;
 mod rock;
 
-use bevy::{
-    ecs::schedule::{LogLevel, ScheduleBuildSettings},
-    prelude::*,
-};
-use physics::PhysicsPlugin;
+use avian2d::{PhysicsPlugins, debug_render::PhysicsDebugPlugin, dynamics::integrator::Gravity};
+use bevy::prelude::*;
 use player::PlayerPlugin;
 use rock::RockPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
 pub enum GameSet {
     Input,
-    Collision,
-    Movement,
 }
 
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.edit_schedule(Update, |schedule| {
-            schedule.set_build_settings(ScheduleBuildSettings {
-                ambiguity_detection: LogLevel::Warn,
-                ..default()
-            });
-        });
         app.add_systems(Startup, setup_camera);
-        app.add_plugins((PlayerPlugin, RockPlugin, PhysicsPlugin));
-        app.configure_sets(
-            Update,
-            (GameSet::Input, GameSet::Collision, GameSet::Movement).chain(),
-        );
+        app.add_plugins((
+            PlayerPlugin,
+            RockPlugin,
+            PhysicsPlugins::default().with_length_unit(50.0),
+        ));
+        app.insert_resource(Gravity::ZERO);
+        app.configure_sets(Update, (GameSet::Input).chain());
     }
 }
 
@@ -41,5 +31,7 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn main() {
-    App::new().add_plugins((DefaultPlugins, GamePlugin)).run();
+    App::new()
+        .add_plugins((DefaultPlugins, GamePlugin, PhysicsDebugPlugin))
+        .run();
 }

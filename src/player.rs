@@ -1,6 +1,7 @@
-use crate::{
-    GameSet,
-    physics::{Collider, Velocity},
+use crate::GameSet;
+use avian2d::{
+    collision::collider::Collider,
+    dynamics::rigid_body::{LinearVelocity, LockedAxes, RigidBody},
 };
 use bevy::prelude::*;
 
@@ -30,10 +31,9 @@ fn setup_player(
         Mesh2d(shape),
         MeshMaterial2d(materials.add(color)),
         Player,
-        Velocity::default(),
-        Collider {
-            half_size: vec2(PLAYER_SIZE, PLAYER_SIZE),
-        },
+        Collider::circle(PLAYER_SIZE),
+        RigidBody::Dynamic,
+        LockedAxes::ROTATION_LOCKED,
     ));
 }
 
@@ -58,7 +58,7 @@ fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>) -> Vec2 {
 
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut vel: Single<&mut Velocity, With<Player>>,
+    mut vel: Single<&mut LinearVelocity, With<Player>>,
 ) {
     vel.0 = get_change_for_input(keyboard_input);
 }

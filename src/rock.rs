@@ -1,6 +1,5 @@
+use avian2d::{collision::collider::Collider, dynamics::rigid_body::RigidBody};
 use bevy::prelude::*;
-
-use crate::physics::Collider;
 
 #[derive(Component)]
 pub struct Rock;
@@ -24,8 +23,7 @@ fn setup_rock(mut commands: Commands) {
         },
         transform,
         Rock,
-        Collider {
-            half_size: vec2(100.0, 50.0),
-        },
+        Collider::rectangle(200.0, 100.0),
+        RigidBody::Static,
     ));
 }
