@@ -1,4 +1,7 @@
-use crate::{GameSet, physics::Velocity};
+use crate::{
+    GameSet,
+    physics::{Collider, Velocity},
+};
 use bevy::prelude::*;
 
 const PLAYER_SIZE: f32 = 10.0;
@@ -28,6 +31,9 @@ fn setup_player(
         MeshMaterial2d(materials.add(color)),
         Player,
         Velocity::default(),
+        Collider {
+            half_size: vec2(PLAYER_SIZE, PLAYER_SIZE),
+        },
     ));
 }
 

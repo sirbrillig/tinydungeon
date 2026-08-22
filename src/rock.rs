@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::physics::Collider;
+
 #[derive(Component)]
 pub struct Rock;
 
@@ -22,5 +24,8 @@ fn setup_rock(mut commands: Commands) {
         },
         transform,
         Rock,
+        Collider {
+            half_size: vec2(100.0, 50.0),
+        },
     ));
 }
