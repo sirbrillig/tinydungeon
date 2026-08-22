@@ -1,3 +1,4 @@
+use crate::GameSet;
 use bevy::prelude::*;
 
 #[derive(Component, Default, Deref, DerefMut)]
@@ -7,7 +8,7 @@ pub struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_things);
+        app.add_systems(Update, move_things.in_set(GameSet::Movement));
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::physics::Velocity;
+use crate::{GameSet, physics::Velocity};
 use bevy::prelude::*;
 
 const PLAYER_SIZE: f32 = 10.0;
@@ -12,7 +12,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
-        app.add_systems(Update, move_player);
+        app.add_systems(Update, move_player.in_set(GameSet::Input));
     }
 }
 
