@@ -31,13 +31,23 @@ fn handle_collisions(
     time: Res<Time>,
 ) {
     for (thing, mut velocity, collider) in movers.iter_mut() {
-        let next = thing.translation.truncate() + velocity.0 * time.delta_secs();
-        let bound = Aabb2d::new(next, collider.half_size);
+        let next_x = thing.translation.truncate().x + velocity.0.x * time.delta_secs();
+        let bound = Aabb2d::new(vec2(next_x, thing.translation.y), collider.half_size);
         for (target, target_collider) in statics {
             let target_bound =
                 Aabb2d::new(target.translation.truncate(), target_collider.half_size);
             if bound.intersects(&target_bound) {
-                velocity.0 = Vec2::ZERO;
+                velocity.0.x = 0.0;
+            }
+        }
+
+        let next_y = thing.translation.truncate().y + velocity.0.y * time.delta_secs();
+        let bound = Aabb2d::new(vec2(thing.translation.x, next_y), collider.half_size);
+        for (target, target_collider) in statics {
+            let target_bound =
+                Aabb2d::new(target.translation.truncate(), target_collider.half_size);
+            if bound.intersects(&target_bound) {
+                velocity.0.y = 0.0;
             }
         }
     }
