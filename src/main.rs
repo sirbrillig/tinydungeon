@@ -1,10 +1,16 @@
+mod debug;
 mod player;
 mod rock;
 
-use avian2d::{PhysicsPlugins, debug_render::PhysicsDebugPlugin, dynamics::integrator::Gravity};
+use avian2d::{
+    PhysicsPlugins,
+    debug_render::{PhysicsDebugPlugin, PhysicsGizmos},
+    dynamics::integrator::Gravity,
+};
 use bevy::prelude::*;
 use player::PlayerPlugin;
 use rock::RockPlugin;
+use debug::DebugPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
 pub enum GameSet {
@@ -20,7 +26,15 @@ impl Plugin for GamePlugin {
             PlayerPlugin,
             RockPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
+            DebugPlugin,
         ));
+        app.insert_gizmo_config(
+            PhysicsGizmos::default(),
+            GizmoConfig {
+                enabled: false,
+                ..default()
+            },
+        );
         app.insert_resource(Gravity::ZERO);
         app.configure_sets(Update, (GameSet::Input).chain());
     }
