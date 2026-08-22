@@ -25,12 +25,8 @@ fn setup_player(
     commands.spawn((Mesh2d(shape), MeshMaterial2d(materials.add(color)), Player));
 }
 
-fn move_player(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player_transform: Single<&mut Transform, With<Player>>,
-    time: Res<Time>,
-) {
-    let mut change = vec2(0.0, 0.0);
+fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>, time: Res<Time>) -> Vec2 {
+    let mut change = Vec2::ZERO;
 
     if keyboard_input.pressed(KeyCode::ArrowRight) {
         change.x += 1.0;
@@ -45,7 +41,14 @@ fn move_player(
         change.y -= 1.0;
     }
 
-    change = change.normalize_or_zero() * PLAYER_SPEED * time.delta_secs();
-    player_transform.translation.x += change.x;
-    player_transform.translation.y += change.y;
+    change.normalize_or_zero() * PLAYER_SPEED * time.delta_secs()
+}
+
+fn move_player(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut player_transform: Single<&mut Transform, With<Player>>,
+    time: Res<Time>,
+) {
+    let change = get_change_for_input(keyboard_input, time);
+    player_transform.translation += change.extend(0.0);
 }
