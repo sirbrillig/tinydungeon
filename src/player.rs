@@ -27,7 +27,7 @@ fn setup_player(
 ) {
     let shape = meshes.add(Circle::new(PLAYER_SIZE));
     let color = Color::hsl(230.0, 0.95, 0.7);
-    let transform = Transform::from_xyz(200.0, 0.0, 10.0);
+    let transform = Transform::from_xyz(400.0, 100.0, 10.0);
     commands.spawn((
         Mesh2d(shape),
         MeshMaterial2d(materials.add(color)),

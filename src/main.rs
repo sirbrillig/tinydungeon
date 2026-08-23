@@ -1,6 +1,5 @@
 mod debug;
 mod player;
-mod rock;
 mod wall;
 
 use avian2d::{
@@ -12,7 +11,6 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::{LdtkPlugin, LdtkWorldBundle, LevelSelection};
 use debug::DebugPlugin;
 use player::PlayerPlugin;
-use rock::RockPlugin;
 use wall::WallPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
@@ -28,7 +26,6 @@ impl Plugin for GamePlugin {
         app.add_plugins((
             LdtkPlugin,
             PlayerPlugin,
-            RockPlugin,
             WallPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
             DebugPlugin,
@@ -47,7 +44,7 @@ impl Plugin for GamePlugin {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((Camera2d, Transform::from_xyz(304.0, 232.0, 0.0)));
 }
 
 fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
