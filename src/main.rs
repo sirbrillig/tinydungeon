@@ -1,6 +1,7 @@
 mod debug;
 mod player;
 mod rock;
+mod wall;
 
 use avian2d::{
     PhysicsPlugins,
@@ -12,6 +13,7 @@ use bevy_ecs_ldtk::{LdtkPlugin, LdtkWorldBundle, LevelSelection};
 use debug::DebugPlugin;
 use player::PlayerPlugin;
 use rock::RockPlugin;
+use wall::WallPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
 pub enum GameSet {
@@ -27,6 +29,7 @@ impl Plugin for GamePlugin {
             LdtkPlugin,
             PlayerPlugin,
             RockPlugin,
+            WallPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
             DebugPlugin,
         ));
@@ -55,8 +58,7 @@ fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn main() {
-    DefaultPlugins.set(ImagePlugin::default_nearest());
     App::new()
-        .add_plugins((DefaultPlugins, GamePlugin, PhysicsDebugPlugin))
+        .add_plugins((DefaultPlugins.set(ImagePlugin::default_nearest()), GamePlugin, PhysicsDebugPlugin))
         .run();
 }
