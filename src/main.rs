@@ -44,7 +44,17 @@ impl Plugin for GamePlugin {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, Transform::from_xyz(304.0, 232.0, 0.0)));
+    commands.spawn((
+        Camera2d,
+        Transform::from_xyz(304.0, 232.0, 0.0),
+        Projection::Orthographic(OrthographicProjection {
+            scaling_mode: bevy::camera::ScalingMode::AutoMin {
+                min_width: 608.0,
+                min_height: 464.0,
+            },
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }
 
 fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -56,6 +66,10 @@ fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins.set(ImagePlugin::default_nearest()), GamePlugin, PhysicsDebugPlugin))
+        .add_plugins((
+            DefaultPlugins.set(ImagePlugin::default_nearest()),
+            GamePlugin,
+            PhysicsDebugPlugin,
+        ))
         .run();
 }
