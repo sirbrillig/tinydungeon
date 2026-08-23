@@ -4,39 +4,45 @@ use avian2d::{
     dynamics::rigid_body::{LinearVelocity, LockedAxes, RigidBody},
 };
 use bevy::prelude::*;
+use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 
-const PLAYER_SIZE: f32 = 10.0;
 const PLAYER_SPEED: f32 = 300.0;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Player;
+
+#[derive(Bundle, LdtkEntity)]
+struct PlayerBundle {
+    player: Player,
+    #[sprite_sheet("Walk.png", 64, 64, 6, 5, 0, 0, 0)]
+    sprite_sheet: Sprite,
+    #[worldly]
+    worldly: Worldly,
+    body: RigidBody,
+    collider: Collider,
+    axes: LockedAxes,
+}
+
+impl Default for PlayerBundle {
+    fn default() -> Self {
+        Self {
+            player: Player,
+            sprite_sheet: Sprite::default(),
+            worldly: Worldly::default(),
+            body: RigidBody::Dynamic,
+            collider: Collider::rectangle(12., 28.),
+            axes: LockedAxes::ROTATION_LOCKED,
+        }
+    }
+}
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_player);
         app.add_systems(Update, move_player.in_set(GameSet::Input));
+        app.register_ldtk_entity::<PlayerBundle>("Player");
     }
-}
-
-fn setup_player(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let shape = meshes.add(Circle::new(PLAYER_SIZE));
-    let color = Color::hsl(230.0, 0.95, 0.7);
-    let transform = Transform::from_xyz(400.0, 100.0, 10.0);
-    commands.spawn((
-        Mesh2d(shape),
-        MeshMaterial2d(materials.add(color)),
-        Player,
-        Collider::circle(PLAYER_SIZE),
-        transform,
-        RigidBody::Dynamic,
-        LockedAxes::ROTATION_LOCKED,
-    ));
 }
 
 fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>) -> Vec2 {
