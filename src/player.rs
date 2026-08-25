@@ -54,11 +54,8 @@ fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>) -> Vec2 {
     if keyboard_input.pressed(KeyCode::ArrowLeft) {
         change.x -= 1.0;
     }
-    if keyboard_input.pressed(KeyCode::ArrowUp) {
-        change.y += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::ArrowDown) {
-        change.y -= 1.0;
+    if keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        change.y += 10.0;
     }
 
     change.normalize_or_zero() * PLAYER_SPEED
@@ -68,5 +65,7 @@ fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut vel: Single<&mut LinearVelocity, With<Player>>,
 ) {
-    vel.0 = get_change_for_input(keyboard_input);
+    let change = get_change_for_input(keyboard_input);
+    vel.0.x = change.x;
+    vel.0.y += change.y;
 }
