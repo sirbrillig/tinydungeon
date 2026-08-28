@@ -3,7 +3,7 @@ use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{LinearVelocity, LockedAxes, RigidBody},
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 
 const PLAYER_SPEED: f32 = 300.0;
@@ -14,13 +14,14 @@ pub struct Player;
 #[derive(Bundle, LdtkEntity)]
 struct PlayerBundle {
     player: Player,
-    #[sprite_sheet("Walk.png", 64, 64, 6, 5, 0, 0, 0)]
+    #[sprite_sheet("Priest-Idle.png", 100, 100, 6, 1, 0, 0, 0)]
     sprite_sheet: Sprite,
     #[worldly]
     worldly: Worldly,
     body: RigidBody,
     collider: Collider,
     axes: LockedAxes,
+    anchor: Anchor,
 }
 
 impl Default for PlayerBundle {
@@ -30,8 +31,9 @@ impl Default for PlayerBundle {
             sprite_sheet: Sprite::default(),
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
-            collider: Collider::rectangle(12., 28.),
+            collider: Collider::rectangle(16., 20.),
             axes: LockedAxes::ROTATION_LOCKED,
+            anchor: Anchor(Vec2::new(0.0, 0.03)),
         }
     }
 }
