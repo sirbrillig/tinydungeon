@@ -1,7 +1,7 @@
 use crate::GameSet;
 use avian2d::{
     collision::collider::Collider,
-    dynamics::rigid_body::{LinearVelocity, LockedAxes, RigidBody},
+    dynamics::rigid_body::{Friction, LinearVelocity, LockedAxes, RigidBody},
     spatial_query::{ShapeCaster, ShapeHits},
 };
 use bevy::{prelude::*, sprite::Anchor};
@@ -48,6 +48,7 @@ struct PlayerBundle {
     #[worldly]
     worldly: Worldly,
     body: RigidBody,
+    friction: Friction,
     collider: Collider,
     ground_detector: ShapeCaster,
     axes: LockedAxes,
@@ -62,6 +63,8 @@ impl Default for PlayerBundle {
             sprite_sheet: Sprite::default(),
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
+            friction: Friction::ZERO
+                .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., PLAYER_HEIGHT),
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
