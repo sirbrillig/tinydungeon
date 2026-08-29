@@ -8,11 +8,13 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 
 const PLAYER_SPEED: f32 = 300.0;
+const PLAYER_JUMP_SPEED: f32 = 350.0;
+const PLAYER_JUMP_CUT_SPEED: f32 = 200.0;
 const PLAYER_HEIGHT: f32 = 20.0;
 const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
-const PLAYER_FOOT_HEIGHT: f32 = 4.0;
-const PLAYER_FOOT_ANCHOR: f32 = -((PLAYER_HEIGHT / 2.) - (PLAYER_FOOT_HEIGHT / 2.))
-    - (((PLAYER_HEIGHT / 2.) - (PLAYER_FOOT_HEIGHT / 2.)) * PLAYER_HEIGHT_ANCHOR_OFFSET);
+const PLAYER_FOOT_HEIGHT: f32 = 2.0;
+const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
+const PLAYER_FOOT_RANGE: f32 = 2.0;
 
 #[derive(Component)]
 struct SpriteAnimation {
@@ -71,7 +73,7 @@ impl Default for PlayerBundle {
                 0.0,
                 Dir2::NEG_Y,
             )
-            .with_max_distance(0.2),
+            .with_max_distance(PLAYER_FOOT_RANGE),
             axes: LockedAxes::ROTATION_LOCKED,
             // Anchor is down a bit because sprite is not vertically centered
             anchor: Anchor(Vec2::new(0.0, PLAYER_HEIGHT_ANCHOR_OFFSET)),
@@ -88,7 +90,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
-        app.add_systems(Update, ground_detection);
+        app.add_systems(Update, ground_detection.before(GameSet::Input));
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(Update, animate_player);
         app.register_ldtk_entity::<PlayerBundle>("Player");
@@ -105,21 +107,17 @@ fn ground_detection(mut commands: Commands, player: Single<(Entity, &ShapeHits),
     }
 }
 
-fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>) -> Vec2 {
-    let mut change = Vec2::ZERO;
+fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
+    let mut change = 0.0;
 
     if keyboard_input.pressed(KeyCode::ArrowRight) {
-        change.x += 1.0;
+        change += 1.0;
     }
     if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        change.x -= 1.0;
-    }
-    if keyboard_input.just_pressed(KeyCode::ArrowUp) {
-        // @todo remove in favor of constant impulse
-        change.y += 10.0;
+        change -= 1.0;
     }
 
-    change.normalize_or_zero() * PLAYER_SPEED
+    change * PLAYER_SPEED
 }
 
 fn move_player(
@@ -127,11 +125,12 @@ fn move_player(
     player: Single<(&mut LinearVelocity, Has<OnGround>), With<Player>>,
 ) {
     let (mut vel, on_ground) = player.into_inner();
-    let change = get_change_for_input(keyboard_input);
-    vel.0.x = change.x;
-    if on_ground {
-        // @todo change to constant impulse instead of addition
-        vel.0.y += change.y;
+    vel.x = get_change_for_input(&keyboard_input);
+    if keyboard_input.just_released(KeyCode::ArrowUp) && vel.0.y > 0.0 {
+        vel.0.y = vel.0.y.min(PLAYER_JUMP_CUT_SPEED);
+    }
+    if on_ground && keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        vel.y = PLAYER_JUMP_SPEED;
     }
 }
 
