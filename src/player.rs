@@ -8,6 +8,11 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 
 const PLAYER_SPEED: f32 = 300.0;
+const PLAYER_HEIGHT: f32 = 20.0;
+const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
+const PLAYER_FOOT_HEIGHT: f32 = 4.0;
+const PLAYER_FOOT_ANCHOR: f32 = -((PLAYER_HEIGHT / 2.) - (PLAYER_FOOT_HEIGHT / 2.))
+    - (((PLAYER_HEIGHT / 2.) - (PLAYER_FOOT_HEIGHT / 2.)) * PLAYER_HEIGHT_ANCHOR_OFFSET);
 
 #[derive(Component)]
 struct SpriteAnimation {
@@ -55,15 +60,21 @@ impl Default for PlayerBundle {
             sprite_sheet: Sprite::default(),
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
-            collider: Collider::rectangle(16., 20.),
+            collider: Collider::rectangle(16., PLAYER_HEIGHT),
             ground_detector: ShapeCaster::new(
-                Collider::rectangle(14., 20.),
-                Vec2::ZERO,
+                Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
+                // Put detector at the player's feet
+                Vec2 {
+                    x: 0.0,
+                    y: PLAYER_FOOT_ANCHOR,
+                },
                 0.0,
                 Dir2::NEG_Y,
-            ).with_max_distance(0.2),
+            )
+            .with_max_distance(0.2),
             axes: LockedAxes::ROTATION_LOCKED,
-            anchor: Anchor(Vec2::new(0.0, 0.03)),
+            // Anchor is down a bit because sprite is not vertically centered
+            anchor: Anchor(Vec2::new(0.0, PLAYER_HEIGHT_ANCHOR_OFFSET)),
             animation: SpriteAnimation {
                 frames: 6,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
