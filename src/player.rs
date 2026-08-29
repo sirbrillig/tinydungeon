@@ -2,6 +2,7 @@ use crate::GameSet;
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{LinearVelocity, LockedAxes, RigidBody},
+    spatial_query::{ShapeCaster, ShapeHits},
 };
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
@@ -20,10 +21,14 @@ struct PlayerAnimationClip {
     frames: usize,
 }
 
+// @todo add walking animation and switch between them
 #[derive(Resource)]
 struct PlayerAnimations {
     idle: PlayerAnimationClip,
 }
+
+#[derive(Component)]
+struct OnGround;
 
 #[derive(Component, Default)]
 pub struct Player;
@@ -37,6 +42,7 @@ struct PlayerBundle {
     worldly: Worldly,
     body: RigidBody,
     collider: Collider,
+    ground_detector: ShapeCaster,
     axes: LockedAxes,
     anchor: Anchor,
     animation: SpriteAnimation,
@@ -50,6 +56,12 @@ impl Default for PlayerBundle {
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
             collider: Collider::rectangle(16., 20.),
+            ground_detector: ShapeCaster::new(
+                Collider::rectangle(14., 20.),
+                Vec2::ZERO,
+                0.0,
+                Dir2::NEG_Y,
+            ).with_max_distance(0.2),
             axes: LockedAxes::ROTATION_LOCKED,
             anchor: Anchor(Vec2::new(0.0, 0.03)),
             animation: SpriteAnimation {
@@ -65,9 +77,20 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
+        app.add_systems(Update, ground_detection);
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(Update, animate_player);
         app.register_ldtk_entity::<PlayerBundle>("Player");
+    }
+}
+
+fn ground_detection(mut commands: Commands, player: Single<(Entity, &ShapeHits), With<Player>>) {
+    let (player_entity, hits) = *player;
+    let is_on_ground = !hits.is_empty();
+    if is_on_ground {
+        commands.entity(player_entity).insert(OnGround);
+    } else {
+        commands.entity(player_entity).remove::<OnGround>();
     }
 }
 
@@ -81,6 +104,7 @@ fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>) -> Vec2 {
         change.x -= 1.0;
     }
     if keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        // @todo remove in favor of constant impulse
         change.y += 10.0;
     }
 
@@ -89,11 +113,15 @@ fn get_change_for_input(keyboard_input: Res<ButtonInput<KeyCode>>) -> Vec2 {
 
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut vel: Single<&mut LinearVelocity, With<Player>>,
+    player: Single<(&mut LinearVelocity, Has<OnGround>), With<Player>>,
 ) {
+    let (mut vel, on_ground) = player.into_inner();
     let change = get_change_for_input(keyboard_input);
     vel.0.x = change.x;
-    vel.0.y += change.y;
+    if on_ground {
+        // @todo change to constant impulse instead of addition
+        vel.0.y += change.y;
+    }
 }
 
 fn setup_player(
