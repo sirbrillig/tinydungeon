@@ -8,8 +8,8 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 
 const PLAYER_SPEED: f32 = 300.0;
-const PLAYER_JUMP_SPEED: f32 = 350.0;
-const PLAYER_JUMP_CUT_SPEED: f32 = 200.0;
+const PLAYER_JUMP_SPEED: f32 = 270.0;
+const PLAYER_JUMP_CUT_SPEED: f32 = 150.0;
 const PLAYER_HEIGHT: f32 = 20.0;
 const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
 const PLAYER_FOOT_HEIGHT: f32 = 2.0;
