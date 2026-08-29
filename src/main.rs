@@ -37,7 +37,7 @@ impl Plugin for GamePlugin {
                 ..default()
             },
         );
-        app.insert_resource(Gravity( Vec2::NEG_Y * 1000.0));
+        app.insert_resource(Gravity(Vec2::NEG_Y * 1000.0));
         app.insert_resource(LevelSelection::index(0));
         app.configure_sets(Update, (GameSet::Input).chain());
     }
