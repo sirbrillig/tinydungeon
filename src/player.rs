@@ -16,6 +16,9 @@ const PLAYER_FOOT_HEIGHT: f32 = 2.0;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
 
+#[derive(Component)]
+struct GroundDetection;
+
 #[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default)]
 enum MovementState {
     #[default]
@@ -77,6 +80,7 @@ struct PlayerBundle {
     body: RigidBody,
     friction: Friction,
     collider: Collider,
+    ground_detection: GroundDetection,
     ground_detector: ShapeCaster,
     axes: LockedAxes,
     anchor: Anchor,
@@ -95,6 +99,7 @@ impl Default for PlayerBundle {
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., PLAYER_HEIGHT),
+            ground_detection: GroundDetection,
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
                 // Put detector at the player's feet
@@ -143,17 +148,18 @@ impl Plugin for PlayerPlugin {
 
 fn ground_detection(
     mut commands: Commands,
-    player: Single<(Entity, &ShapeHits, Has<OnGround>), With<Player>>,
+    query: Query<(Entity, &ShapeHits, Has<OnGround>), With<GroundDetection>>,
 ) {
-    let (player_entity, hits, was_on_ground) = *player;
-    let is_on_ground = !hits.is_empty();
-    if is_on_ground == was_on_ground {
-        return;
-    }
-    if is_on_ground {
-        commands.entity(player_entity).insert(OnGround);
-    } else {
-        commands.entity(player_entity).remove::<OnGround>();
+    for (player_entity, hits, was_on_ground) in query {
+        let is_on_ground = !hits.is_empty();
+        if is_on_ground == was_on_ground {
+            return;
+        }
+        if is_on_ground {
+            commands.entity(player_entity).insert(OnGround);
+        } else {
+            commands.entity(player_entity).remove::<OnGround>();
+        }
     }
 }
 
