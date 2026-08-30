@@ -141,9 +141,15 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-fn ground_detection(mut commands: Commands, player: Single<(Entity, &ShapeHits), With<Player>>) {
-    let (player_entity, hits) = *player;
+fn ground_detection(
+    mut commands: Commands,
+    player: Single<(Entity, &ShapeHits, Has<OnGround>), With<Player>>,
+) {
+    let (player_entity, hits, was_on_ground) = *player;
     let is_on_ground = !hits.is_empty();
+    if is_on_ground == was_on_ground {
+        return;
+    }
     if is_on_ground {
         commands.entity(player_entity).insert(OnGround);
     } else {
