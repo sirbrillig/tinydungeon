@@ -7,7 +7,7 @@ use avian2d::{
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 
-const PLAYER_SPEED: f32 = 300.0;
+const PLAYER_SPEED: f32 = 130.0;
 const PLAYER_JUMP_SPEED: f32 = 270.0;
 const PLAYER_JUMP_CUT_SPEED: f32 = 150.0;
 const PLAYER_HEIGHT: f32 = 20.0;
@@ -16,10 +16,17 @@ const PLAYER_FOOT_HEIGHT: f32 = 2.0;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
 
+#[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default)]
+enum PlayerState {
+    #[default]
+    Idle,
+    Walking,
+}
+
 #[derive(Component)]
 struct SpriteAnimation {
     frames: usize,
-    timer: Timer, // Timer::from_seconds(0.1, TimerMode::Repeating)
+    timer: Timer,
 }
 
 struct PlayerAnimationClip {
@@ -28,10 +35,19 @@ struct PlayerAnimationClip {
     frames: usize,
 }
 
-// @todo add walking animation and switch between them
 #[derive(Resource)]
 struct PlayerAnimations {
     idle: PlayerAnimationClip,
+    walk: PlayerAnimationClip,
+}
+
+impl PlayerAnimations {
+    pub fn clip_for_state(&self, state: &PlayerState) -> &PlayerAnimationClip {
+        match state {
+            PlayerState::Idle => &self.idle,
+            PlayerState::Walking => &self.walk,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -43,6 +59,7 @@ pub struct Player;
 #[derive(Bundle, LdtkEntity)]
 struct PlayerBundle {
     player: Player,
+    state: PlayerState,
     #[sprite_sheet("Priest-Idle.png", 100, 100, 6, 1, 0, 0, 0)]
     sprite_sheet: Sprite,
     #[worldly]
@@ -60,6 +77,7 @@ impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
             player: Player,
+            state: PlayerState::Idle,
             sprite_sheet: Sprite::default(),
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
@@ -95,7 +113,12 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Startup, setup_player);
         app.add_systems(Update, ground_detection.before(GameSet::Input));
         app.add_systems(Update, move_player.in_set(GameSet::Input));
-        app.add_systems(Update, animate_player);
+        app.add_systems(
+            Update,
+            (determine_state, update_sprite, animate_player)
+                .chain()
+                .after(GameSet::Input),
+        );
         app.register_ldtk_entity::<PlayerBundle>("Player");
     }
 }
@@ -107,6 +130,32 @@ fn ground_detection(mut commands: Commands, player: Single<(Entity, &ShapeHits),
         commands.entity(player_entity).insert(OnGround);
     } else {
         commands.entity(player_entity).remove::<OnGround>();
+    }
+}
+
+fn determine_state(player: Single<(&mut PlayerState, &LinearVelocity), With<Player>>) {
+    let (mut state, vel) = player.into_inner();
+    let mut next: PlayerState = PlayerState::Idle;
+    if vel.x != 0.0 {
+        next = PlayerState::Walking;
+    }
+    if *state != next {
+        *state = next;
+    }
+}
+
+fn update_sprite(
+    mut query: Query<(&PlayerState, &mut Sprite, &mut SpriteAnimation), Changed<PlayerState>>,
+    animations: Res<PlayerAnimations>,
+) {
+    for (state, mut sprite, mut animation) in &mut query {
+        let clip = animations.clip_for_state(state);
+        sprite.image = clip.image.clone();
+        sprite.texture_atlas = Some(TextureAtlas {
+            layout: clip.layout.clone(),
+            index: 0,
+        });
+        animation.frames = clip.frames;
     }
 }
 
@@ -142,7 +191,7 @@ fn setup_player(
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands,
 ) {
-    let clip = PlayerAnimationClip {
+    let idle = PlayerAnimationClip {
         image: asset_server.load("Priest-Idle.png"),
         layout: layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(100),
@@ -153,7 +202,18 @@ fn setup_player(
         )),
         frames: 6,
     };
-    commands.insert_resource(PlayerAnimations { idle: clip });
+    let walk = PlayerAnimationClip {
+        image: asset_server.load("Priest-Walk.png"),
+        layout: layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::splat(100),
+            8,
+            1,
+            None,
+            None,
+        )),
+        frames: 8,
+    };
+    commands.insert_resource(PlayerAnimations { idle, walk });
 }
 
 fn animate_player(time: Res<Time>, mut query: Query<(&mut SpriteAnimation, &mut Sprite)>) {
