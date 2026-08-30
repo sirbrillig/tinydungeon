@@ -204,15 +204,13 @@ fn update_facing(mut query: Query<(&FacingDirection, &mut Sprite), Changed<Facin
 }
 
 fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
-    let mut change = 0.0;
-
-    if keyboard_input.pressed(KeyCode::ArrowRight) {
-        change += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        change -= 1.0;
-    }
-
+    let change = if keyboard_input.pressed(KeyCode::ArrowRight) {
+        1.0
+    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
+        -1.0
+    } else {
+        0.0
+    };
     change * PLAYER_SPEED
 }
 
