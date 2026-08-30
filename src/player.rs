@@ -21,6 +21,7 @@ enum PlayerState {
     #[default]
     Idle,
     Walking,
+    Jumping,
 }
 
 #[derive(Component)]
@@ -39,6 +40,7 @@ struct PlayerAnimationClip {
 struct PlayerAnimations {
     idle: PlayerAnimationClip,
     walk: PlayerAnimationClip,
+    jump: PlayerAnimationClip,
 }
 
 impl PlayerAnimations {
@@ -46,6 +48,7 @@ impl PlayerAnimations {
         match state {
             PlayerState::Idle => &self.idle,
             PlayerState::Walking => &self.walk,
+            PlayerState::Jumping => &self.jump,
         }
     }
 }
@@ -133,12 +136,16 @@ fn ground_detection(mut commands: Commands, player: Single<(Entity, &ShapeHits),
     }
 }
 
-fn determine_state(player: Single<(&mut PlayerState, &LinearVelocity), With<Player>>) {
-    let (mut state, vel) = player.into_inner();
-    let mut next: PlayerState = PlayerState::Idle;
-    if vel.x != 0.0 {
-        next = PlayerState::Walking;
-    }
+fn determine_state(
+    player: Single<(&mut PlayerState, &LinearVelocity, Has<OnGround>), With<Player>>,
+) {
+    let (mut state, vel, on_ground) = player.into_inner();
+    let is_walking = vel.x.abs() > 0.1;
+    let next = match (on_ground, is_walking) {
+        (false, _) => PlayerState::Jumping,
+        (true, true) => PlayerState::Walking,
+        (true, false) => PlayerState::Idle,
+    };
     if *state != next {
         *state = next;
     }
@@ -213,7 +220,18 @@ fn setup_player(
         )),
         frames: 8,
     };
-    commands.insert_resource(PlayerAnimations { idle, walk });
+    let jump = PlayerAnimationClip {
+        image: asset_server.load("Priest-Walk.png"),
+        layout: layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::splat(100),
+            8,
+            1,
+            None,
+            None,
+        )),
+        frames: 1,
+    };
+    commands.insert_resource(PlayerAnimations { idle, walk, jump });
 }
 
 fn animate_player(time: Res<Time>, mut query: Query<(&mut SpriteAnimation, &mut Sprite)>) {
@@ -225,7 +243,7 @@ fn animate_player(time: Res<Time>, mut query: Query<(&mut SpriteAnimation, &mut 
         if config.timer.just_finished()
             && let Some(atlas) = &mut sprite.texture_atlas
         {
-            atlas.index = (atlas.index + 1) % config.frames;
+            atlas.index = (atlas.index + 1) % config.frames.max(1);
         }
     }
 }
