@@ -1,4 +1,5 @@
 mod debug;
+mod movement;
 mod player;
 mod wall;
 
@@ -10,6 +11,7 @@ use avian2d::{
 use bevy::prelude::*;
 use bevy_ecs_ldtk::{LdtkPlugin, LdtkWorldBundle, LevelSelection};
 use debug::DebugPlugin;
+use movement::MovementPlugin;
 use player::PlayerPlugin;
 use wall::WallPlugin;
 
@@ -25,6 +27,7 @@ impl Plugin for GamePlugin {
         app.add_systems(Startup, (setup_world, setup_camera));
         app.add_plugins((
             LdtkPlugin,
+            MovementPlugin,
             PlayerPlugin,
             WallPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
