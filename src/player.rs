@@ -24,6 +24,13 @@ enum PlayerState {
     Jumping,
 }
 
+#[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default)]
+enum FacingDirection {
+    #[default]
+    Right,
+    Left,
+}
+
 #[derive(Component)]
 struct SpriteAnimation {
     frames: usize,
@@ -74,6 +81,7 @@ struct PlayerBundle {
     axes: LockedAxes,
     anchor: Anchor,
     animation: SpriteAnimation,
+    facing: FacingDirection,
 }
 
 impl Default for PlayerBundle {
@@ -105,6 +113,7 @@ impl Default for PlayerBundle {
                 frames: 6,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             },
+            facing: FacingDirection::Right,
         }
     }
 }
@@ -118,7 +127,13 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(
             Update,
-            (determine_state, update_sprite, animate_player)
+            (
+                determine_state,
+                determine_facing,
+                update_sprite,
+                update_facing,
+                animate_player,
+            )
                 .chain()
                 .after(GameSet::Input),
         );
@@ -141,13 +156,29 @@ fn determine_state(
 ) {
     let (mut state, vel, on_ground) = player.into_inner();
     let is_walking = vel.x.abs() > 0.1;
-    let next = match (on_ground, is_walking) {
+    let next_state = match (on_ground, is_walking) {
         (false, _) => PlayerState::Jumping,
         (true, true) => PlayerState::Walking,
         (true, false) => PlayerState::Idle,
     };
-    if *state != next {
-        *state = next;
+    if *state != next_state {
+        *state = next_state;
+    }
+}
+
+fn determine_facing(player: Single<(&mut FacingDirection, &LinearVelocity), With<Player>>) {
+    let (mut facing, vel) = player.into_inner();
+    let is_walking = vel.x.abs() > 0.1;
+    if !is_walking {
+        return;
+    }
+    let next_facing = if vel.x > 0.0 {
+        FacingDirection::Right
+    } else {
+        FacingDirection::Left
+    };
+    if *facing != next_facing {
+        *facing = next_facing;
     }
 }
 
@@ -163,6 +194,12 @@ fn update_sprite(
             index: 0,
         });
         animation.frames = clip.frames;
+    }
+}
+
+fn update_facing(mut query: Query<(&FacingDirection, &mut Sprite), Changed<FacingDirection>>) {
+    for (facing, mut sprite) in &mut query {
+        sprite.flip_x = *facing == FacingDirection::Left;
     }
 }
 
