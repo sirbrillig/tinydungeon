@@ -17,7 +17,7 @@ const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.
 const PLAYER_FOOT_RANGE: f32 = 2.0;
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default)]
-enum PlayerState {
+enum MovementState {
     #[default]
     Idle,
     Walking,
@@ -37,7 +37,7 @@ struct SpriteAnimation {
     timer: Timer,
 }
 
-struct PlayerAnimationClip {
+struct CharacterAnimationClip {
     image: Handle<Image>,
     layout: Handle<TextureAtlasLayout>,
     frames: usize,
@@ -45,17 +45,17 @@ struct PlayerAnimationClip {
 
 #[derive(Resource)]
 struct PlayerAnimations {
-    idle: PlayerAnimationClip,
-    walk: PlayerAnimationClip,
-    jump: PlayerAnimationClip,
+    idle: CharacterAnimationClip,
+    walk: CharacterAnimationClip,
+    jump: CharacterAnimationClip,
 }
 
 impl PlayerAnimations {
-    pub fn clip_for_state(&self, state: &PlayerState) -> &PlayerAnimationClip {
+    pub fn clip_for_state(&self, state: &MovementState) -> &CharacterAnimationClip {
         match state {
-            PlayerState::Idle => &self.idle,
-            PlayerState::Walking => &self.walk,
-            PlayerState::Jumping => &self.jump,
+            MovementState::Idle => &self.idle,
+            MovementState::Walking => &self.walk,
+            MovementState::Jumping => &self.jump,
         }
     }
 }
@@ -69,7 +69,7 @@ pub struct Player;
 #[derive(Bundle, LdtkEntity)]
 struct PlayerBundle {
     player: Player,
-    state: PlayerState,
+    state: MovementState,
     #[sprite_sheet("Priest-Idle.png", 100, 100, 6, 1, 0, 0, 0)]
     sprite_sheet: Sprite,
     #[worldly]
@@ -88,7 +88,7 @@ impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
             player: Player,
-            state: PlayerState::Idle,
+            state: MovementState::Idle,
             sprite_sheet: Sprite::default(),
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
@@ -152,14 +152,14 @@ fn ground_detection(mut commands: Commands, player: Single<(Entity, &ShapeHits),
 }
 
 fn determine_state(
-    player: Single<(&mut PlayerState, &LinearVelocity, Has<OnGround>), With<Player>>,
+    player: Single<(&mut MovementState, &LinearVelocity, Has<OnGround>), With<Player>>,
 ) {
     let (mut state, vel, on_ground) = player.into_inner();
     let is_walking = vel.x.abs() > 0.1;
     let next_state = match (on_ground, is_walking) {
-        (false, _) => PlayerState::Jumping,
-        (true, true) => PlayerState::Walking,
-        (true, false) => PlayerState::Idle,
+        (false, _) => MovementState::Jumping,
+        (true, true) => MovementState::Walking,
+        (true, false) => MovementState::Idle,
     };
     if *state != next_state {
         *state = next_state;
@@ -183,7 +183,7 @@ fn determine_facing(player: Single<(&mut FacingDirection, &LinearVelocity), With
 }
 
 fn update_sprite(
-    mut query: Query<(&PlayerState, &mut Sprite, &mut SpriteAnimation), Changed<PlayerState>>,
+    mut query: Query<(&MovementState, &mut Sprite, &mut SpriteAnimation), Changed<MovementState>>,
     animations: Res<PlayerAnimations>,
 ) {
     for (state, mut sprite, mut animation) in &mut query {
@@ -233,7 +233,7 @@ fn setup_player(
     mut layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands,
 ) {
-    let idle = PlayerAnimationClip {
+    let idle = CharacterAnimationClip {
         image: asset_server.load("Priest-Idle.png"),
         layout: layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(100),
@@ -244,7 +244,7 @@ fn setup_player(
         )),
         frames: 6,
     };
-    let walk = PlayerAnimationClip {
+    let walk = CharacterAnimationClip {
         image: asset_server.load("Priest-Walk.png"),
         layout: layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(100),
@@ -255,7 +255,7 @@ fn setup_player(
         )),
         frames: 8,
     };
-    let jump = PlayerAnimationClip {
+    let jump = CharacterAnimationClip {
         image: asset_server.load("Priest-Walk.png"),
         layout: layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(100),
