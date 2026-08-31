@@ -1,5 +1,6 @@
-use crate::GameSet;
+use crate::animation::CharacterAnimationClip;
 use crate::movement::*;
+use crate::{GameSet, animation::SpriteAnimation};
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{Friction, LinearVelocity, LockedAxes, RigidBody},
@@ -16,18 +17,6 @@ const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
 const PLAYER_FOOT_HEIGHT: f32 = 2.0;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
-
-#[derive(Component)]
-struct SpriteAnimation {
-    frames: usize,
-    timer: Timer,
-}
-
-struct CharacterAnimationClip {
-    image: Handle<Image>,
-    layout: Handle<TextureAtlasLayout>,
-    frames: usize,
-}
 
 #[derive(Resource)]
 struct PlayerAnimations {
@@ -116,7 +105,6 @@ impl Plugin for PlayerPlugin {
                 determine_facing,
                 update_sprite,
                 update_facing,
-                animate_player,
             )
                 .chain()
                 .after(GameSet::Input),
@@ -241,18 +229,4 @@ fn setup_player(
         frames: 1,
     };
     commands.insert_resource(PlayerAnimations { idle, walk, jump });
-}
-
-fn animate_player(time: Res<Time>, mut query: Query<(&mut SpriteAnimation, &mut Sprite)>) {
-    for (mut config, mut sprite) in &mut query {
-        // We track how long the current sprite has been displayed for
-        config.timer.tick(time.delta());
-
-        // If it has been displayed for the user-defined amount of time (fps)...
-        if config.timer.just_finished()
-            && let Some(atlas) = &mut sprite.texture_atlas
-        {
-            atlas.index = (atlas.index + 1) % config.frames.max(1);
-        }
-    }
 }

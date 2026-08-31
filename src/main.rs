@@ -1,8 +1,10 @@
+mod animation;
 mod debug;
 mod movement;
 mod player;
 mod wall;
 
+use animation::AnimationPlugin;
 use avian2d::{
     PhysicsPlugins,
     debug_render::{PhysicsDebugPlugin, PhysicsGizmos},
@@ -18,6 +20,7 @@ use wall::WallPlugin;
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
 pub enum GameSet {
     Input,
+    PostInput,
 }
 
 pub struct GamePlugin;
@@ -28,6 +31,7 @@ impl Plugin for GamePlugin {
         app.add_plugins((
             LdtkPlugin,
             MovementPlugin,
+            AnimationPlugin,
             PlayerPlugin,
             WallPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
@@ -42,7 +46,7 @@ impl Plugin for GamePlugin {
         );
         app.insert_resource(Gravity(Vec2::NEG_Y * 1000.0));
         app.insert_resource(LevelSelection::index(0));
-        app.configure_sets(Update, (GameSet::Input).chain());
+        app.configure_sets(Update, (GameSet::Input, GameSet::PostInput).chain());
     }
 }
 
