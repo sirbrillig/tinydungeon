@@ -2,6 +2,7 @@ mod animation;
 mod debug;
 mod movement;
 mod player;
+mod enemies;
 mod wall;
 
 use animation::AnimationPlugin;
@@ -15,6 +16,7 @@ use bevy_ecs_ldtk::{LdtkPlugin, LdtkWorldBundle, LevelSelection};
 use debug::DebugPlugin;
 use movement::MovementPlugin;
 use player::PlayerPlugin;
+use enemies::EnemyPlugin;
 use wall::WallPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
@@ -33,6 +35,7 @@ impl Plugin for GamePlugin {
             MovementPlugin,
             AnimationPlugin,
             PlayerPlugin,
+            EnemyPlugin,
             WallPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
             DebugPlugin,
