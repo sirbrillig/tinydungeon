@@ -1,4 +1,5 @@
-use crate::animation::CharacterAnimationClip;
+use std::collections::HashMap;
+use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
 use crate::{GameSet, animation::SpriteAnimation};
 use avian2d::{
@@ -19,21 +20,7 @@ const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.
 const PLAYER_FOOT_RANGE: f32 = 2.0;
 
 #[derive(Resource)]
-struct PlayerAnimations {
-    idle: CharacterAnimationClip,
-    walk: CharacterAnimationClip,
-    jump: CharacterAnimationClip,
-}
-
-impl PlayerAnimations {
-    pub fn clip_for_state(&self, state: &MovementState) -> &CharacterAnimationClip {
-        match state {
-            MovementState::Idle => &self.idle,
-            MovementState::Walking => &self.walk,
-            MovementState::Jumping => &self.jump,
-        }
-    }
-}
+struct PlayerAnimations(AnimationSet);
 
 #[derive(Component, Default)]
 pub struct Player;
@@ -100,17 +87,22 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(
             Update,
-            (
-                determine_movement_state,
-                determine_facing,
-                update_sprite,
-                update_facing,
-            )
+            (determine_movement_state, determine_facing, update_facing)
                 .chain()
                 .after(GameSet::Input),
         );
         app.register_ldtk_entity::<PlayerBundle>("Player");
+        app.add_observer(on_player_spawned);
     }
+}
+
+fn on_player_spawned(
+    event: On<Add, Player>,
+    mut commands: Commands,
+    animations: Res<PlayerAnimations>,
+) {
+    // Add player animation map (must do in a System so we can access World things like commands)
+    commands.entity(event.entity).insert(animations.0.clone());
 }
 
 fn determine_movement_state(
@@ -141,21 +133,6 @@ fn determine_facing(player: Single<(&mut FacingDirection, &LinearVelocity), With
     };
     if *facing != next_facing {
         *facing = next_facing;
-    }
-}
-
-fn update_sprite(
-    mut query: Query<(&MovementState, &mut Sprite, &mut SpriteAnimation), Changed<MovementState>>,
-    animations: Res<PlayerAnimations>,
-) {
-    for (state, mut sprite, mut animation) in &mut query {
-        let clip = animations.clip_for_state(state);
-        sprite.image = clip.image.clone();
-        sprite.texture_atlas = Some(TextureAtlas {
-            layout: clip.layout.clone(),
-            index: 0,
-        });
-        animation.frames = clip.frames;
     }
 }
 
@@ -228,5 +205,11 @@ fn setup_player(
         )),
         frames: 1,
     };
-    commands.insert_resource(PlayerAnimations { idle, walk, jump });
+    commands.insert_resource(PlayerAnimations(AnimationSet {
+        animation_map: HashMap::from([
+            (MovementState::Idle, idle),
+            (MovementState::Walking, walk),
+            (MovementState::Jumping, jump),
+        ]),
+    }));
 }

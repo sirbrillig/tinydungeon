@@ -16,7 +16,7 @@ pub struct GroundDetection;
 #[derive(Component)]
 pub struct OnGround;
 
-#[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default)]
+#[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
 pub enum MovementState {
     #[default]
     Idle,
