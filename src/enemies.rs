@@ -1,6 +1,8 @@
 use crate::animation::SpriteAnimation;
 use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
+use crate::player::Player;
+use avian2d::physics_transform::Position;
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{Friction, LockedAxes, RigidBody},
@@ -84,21 +86,28 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_enemy);
-        app.add_systems(Update, test_action_system);
+        app.add_systems(Update, wait_for_player);
         app.register_ldtk_entity::<EnemyBundle>("Enemy");
         app.add_observer(on_spawned);
+        app.add_observer(on_test_action);
     }
 }
 
-fn on_spawned(event: On<Add, Enemy>, mut commands: Commands, animations: Res<EnemyAnimations>) {
+fn on_spawned(
+    event: On<Add, Enemy>,
+    mut commands: Commands,
+    animations: Res<EnemyAnimations>,
+    player: Single<Entity, With<Player>>,
+) {
     // Add animation map (must do in a System so we can access World things like commands)
     commands.entity(event.entity).insert(animations.0.clone());
 
     let tree = behave! {
         Behave::Forever => {
             Behave::Sequence => {
-                Behave::Wait(3.0),
-                Behave::spawn_named("Test task", TestAction)
+                Behave::spawn_named("Wait until player is near", WaitUntilPlayerIsNear { player: *player }),
+                Behave::trigger(TestAction),
+                Behave::Wait(5.0),
             }
         }
     };
@@ -109,14 +118,38 @@ fn on_spawned(event: On<Add, Enemy>, mut commands: Commands, animations: Res<Ene
     ));
 }
 
+#[derive(Component, Clone)]
+struct WaitUntilPlayerIsNear {
+    player: Entity,
+}
+
+fn wait_for_player(
+    query: Query<(&WaitUntilPlayerIsNear, &BehaveCtx)>,
+    mut commands: Commands,
+    entities: Query<&Position>,
+) {
+    for (task, ctx) in query.iter() {
+        let Ok(player_pos) = entities.get(task.player) else {
+            continue;
+        };
+        let Ok(enemy_pos) = entities.get(ctx.target_entity()) else {
+            continue;
+        };
+        let distance_to_player = player_pos.distance_squared(enemy_pos.0);
+        // @todo make this configurable
+        let near_distance = 3500.0;
+        if distance_to_player <= near_distance {
+            commands.trigger(ctx.success());
+        }
+    }
+}
+
 #[derive(Component, Default, Clone)]
 struct TestAction;
 
-fn test_action_system(tasks: Query<(&TestAction, &BehaveCtx)>, mut commands: Commands) {
-    for (_, ctx) in tasks.iter() {
-        println!("testing!");
-        commands.trigger(ctx.success());
-    }
+fn on_test_action(trigger: On<BehaveTrigger<TestAction>>, mut commands: Commands) {
+    println!("testing!");
+    commands.trigger(trigger.ctx().success());
 }
 
 fn setup_enemy(
