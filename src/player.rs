@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
 use crate::{GameSet, animation::SpriteAnimation};
@@ -9,6 +8,7 @@ use avian2d::{
 };
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
+use std::collections::HashMap;
 
 const PLAYER_SPEED: f32 = 90.0;
 const PLAYER_JUMP_SPEED: f32 = 255.0;

@@ -1,19 +1,19 @@
-use std::collections::HashMap;
+use crate::animation::SpriteAnimation;
 use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
-use crate::{animation::SpriteAnimation};
 use avian2d::{
     collision::collider::Collider,
-    dynamics::rigid_body::{Friction, LinearVelocity, LockedAxes, RigidBody},
+    dynamics::rigid_body::{Friction, LockedAxes, RigidBody},
     spatial_query::ShapeCaster,
 };
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_behave::behave;
+use bevy_behave::prelude::*;
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
+use std::collections::HashMap;
 
 const ENEMY_SPEED: f32 = 90.0;
-const ENEMY_JUMP_SPEED: f32 = 255.0;
-const ENEMY_JUMP_CUT_SPEED: f32 = 190.0;
-const ENEMY_HEIGHT: f32 = 20.0;
+const ENEMY_HEIGHT: f32 = 16.0;
 const ENEMY_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
 const ENEMY_FOOT_HEIGHT: f32 = 2.0;
 const ENEMY_FOOT_ANCHOR: f32 = -(ENEMY_HEIGHT / 2.) + (ENEMY_FOOT_HEIGHT / 2.);
@@ -84,80 +84,38 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_enemy);
+        app.add_systems(Update, test_action_system);
         app.register_ldtk_entity::<EnemyBundle>("Enemy");
         app.add_observer(on_spawned);
     }
 }
 
-fn on_spawned(
-    event: On<Add, Enemy>,
-    mut commands: Commands,
-    animations: Res<EnemyAnimations>,
-) {
+fn on_spawned(event: On<Add, Enemy>, mut commands: Commands, animations: Res<EnemyAnimations>) {
     // Add animation map (must do in a System so we can access World things like commands)
     commands.entity(event.entity).insert(animations.0.clone());
-}
 
-fn determine_movement_state(
-    enemy: Single<(&mut MovementState, &LinearVelocity, Has<OnGround>), With<Enemy>>,
-) {
-    let (mut state, vel, on_ground) = enemy.into_inner();
-    let is_walking = vel.x.abs() > 0.1;
-    let next_state = match (on_ground, is_walking) {
-        (false, _) => MovementState::Jumping,
-        (true, true) => MovementState::Walking,
-        (true, false) => MovementState::Idle,
+    let tree = behave! {
+        Behave::Forever => {
+            Behave::Sequence => {
+                Behave::Wait(3.0),
+                Behave::spawn_named("Test task", TestAction)
+            }
+        }
     };
-    if *state != next_state {
-        *state = next_state;
-    }
+    commands.spawn((
+        Name::new("Behave tree"),
+        BehaveTree::new(tree).with_logging(true),
+        ChildOf(event.entity),
+    ));
 }
 
-fn determine_facing(enemy: Single<(&mut FacingDirection, &LinearVelocity), With<Enemy>>) {
-    let (mut facing, vel) = enemy.into_inner();
-    let is_walking = vel.x.abs() > 0.1;
-    if !is_walking {
-        return;
-    }
-    let next_facing = if vel.x > 0.0 {
-        FacingDirection::Right
-    } else {
-        FacingDirection::Left
-    };
-    if *facing != next_facing {
-        *facing = next_facing;
-    }
-}
+#[derive(Component, Default, Clone)]
+struct TestAction;
 
-fn update_facing(mut query: Query<(&FacingDirection, &mut Sprite), Changed<FacingDirection>>) {
-    for (facing, mut sprite) in &mut query {
-        sprite.flip_x = *facing == FacingDirection::Left;
-    }
-}
-
-fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
-    let change = if keyboard_input.pressed(KeyCode::ArrowRight) {
-        1.0
-    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        -1.0
-    } else {
-        0.0
-    };
-    change * ENEMY_SPEED
-}
-
-fn move_enemy(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    enemy: Single<(&mut LinearVelocity, Has<OnGround>), With<Enemy>>,
-) {
-    // @todo this should not respond to keyboard
-    let (mut vel, on_ground) = enemy.into_inner();
-    vel.x = get_change_for_input(&keyboard_input);
-    if keyboard_input.just_released(KeyCode::ArrowUp) && vel.0.y > 0.0 {
-        vel.0.y = vel.0.y.min(ENEMY_JUMP_CUT_SPEED);
-    }
-    if on_ground && keyboard_input.just_pressed(KeyCode::ArrowUp) {
-        vel.y = ENEMY_JUMP_SPEED;
+fn test_action_system(tasks: Query<(&TestAction, &BehaveCtx)>, mut commands: Commands) {
+    for (_, ctx) in tasks.iter() {
+        println!("testing!");
+        commands.trigger(ctx.success());
     }
 }
 

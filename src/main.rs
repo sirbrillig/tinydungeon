@@ -1,8 +1,8 @@
 mod animation;
 mod debug;
+mod enemies;
 mod movement;
 mod player;
-mod enemies;
 mod wall;
 
 use animation::AnimationPlugin;
@@ -12,11 +12,12 @@ use avian2d::{
     dynamics::integrator::Gravity,
 };
 use bevy::prelude::*;
+use bevy_behave::prelude::BehavePlugin;
 use bevy_ecs_ldtk::{LdtkPlugin, LdtkWorldBundle, LevelSelection};
 use debug::DebugPlugin;
+use enemies::EnemyPlugin;
 use movement::MovementPlugin;
 use player::PlayerPlugin;
-use enemies::EnemyPlugin;
 use wall::WallPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
@@ -32,6 +33,7 @@ impl Plugin for GamePlugin {
         app.add_systems(Startup, (setup_world, setup_camera));
         app.add_plugins((
             LdtkPlugin,
+            BehavePlugin::default(),
             MovementPlugin,
             AnimationPlugin,
             PlayerPlugin,

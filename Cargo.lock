@@ -596,6 +596,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_behave"
+version = "0.6.0"
+source = "git+https://github.com/RJ/bevy_behave?branch=main#dbf968079d2b8af518ca96b6d7a1bff7bcd2fdd9"
+dependencies = [
+ "bevy",
+ "dyn-clone",
+ "ego-tree",
+]
+
+[[package]]
 name = "bevy_camera"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2592,6 +2602,18 @@ name = "dpi"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
+
+[[package]]
+name = "ego-tree"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b04dc5a38e4f151a79d9f2451ae6037fb6eaf5cba34771f44781f80e508498e3"
 
 [[package]]
 name = "either"
@@ -5415,6 +5437,7 @@ version = "0.1.0"
 dependencies = [
  "avian2d",
  "bevy",
+ "bevy_behave",
  "bevy_ecs_ldtk",
 ]
 
