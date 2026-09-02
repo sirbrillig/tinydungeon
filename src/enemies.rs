@@ -87,42 +87,10 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_enemy);
-        app.add_systems(
-            Update,
-            (
-                wait_for_player,
-                move_toward_entity,
-                determine_facing,
-                update_facing,
-            )
-                .chain(),
-        );
+        app.add_systems(Update, (wait_for_player, move_toward_entity).chain());
         app.register_ldtk_entity::<EnemyBundle>("Enemy");
         app.add_observer(on_spawned);
         app.add_observer(on_test_action);
-    }
-}
-
-fn determine_facing(mut query: Query<(&mut FacingDirection, &LinearVelocity), With<Enemy>>) {
-    for (mut facing, vel) in query.iter_mut() {
-        let is_walking = vel.x.abs() > 0.1;
-        if !is_walking {
-            return;
-        }
-        let next_facing = if vel.x > 0.0 {
-            FacingDirection::Right
-        } else {
-            FacingDirection::Left
-        };
-        if *facing != next_facing {
-            *facing = next_facing;
-        }
-    }
-}
-
-fn update_facing(mut query: Query<(&FacingDirection, &mut Sprite), Changed<FacingDirection>>) {
-    for (facing, mut sprite) in &mut query {
-        sprite.flip_x = *facing == FacingDirection::Left;
     }
 }
 

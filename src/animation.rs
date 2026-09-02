@@ -1,4 +1,8 @@
-use crate::{GameSet, movement::MovementState};
+use crate::{
+    GameSet,
+    movement::{FacingDirection, MovementState},
+};
+use avian2d::dynamics::rigid_body::LinearVelocity;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
@@ -32,7 +36,12 @@ impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (update_sprites, animate_sprites)
+            (
+                determine_facing,
+                update_facing,
+                update_sprites,
+                animate_sprites,
+            )
                 .chain()
                 .in_set(GameSet::PostInput),
         );
@@ -74,5 +83,28 @@ fn update_sprites(
             index: 0,
         });
         animation.frames = clip.frames;
+    }
+}
+
+fn determine_facing(mut query: Query<(&mut FacingDirection, &LinearVelocity), With<Sprite>>) {
+    for (mut facing, vel) in query.iter_mut() {
+        let is_walking = vel.x.abs() > 0.1;
+        if !is_walking {
+            return;
+        }
+        let next_facing = if vel.x > 0.0 {
+            FacingDirection::Right
+        } else {
+            FacingDirection::Left
+        };
+        if *facing != next_facing {
+            *facing = next_facing;
+        }
+    }
+}
+
+fn update_facing(mut query: Query<(&FacingDirection, &mut Sprite), Changed<FacingDirection>>) {
+    for (facing, mut sprite) in &mut query {
+        sprite.flip_x = *facing == FacingDirection::Left;
     }
 }

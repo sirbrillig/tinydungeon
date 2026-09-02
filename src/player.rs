@@ -89,9 +89,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(
             Update,
-            (determine_movement_state, determine_facing, update_facing)
-                .chain()
-                .after(GameSet::Input),
+            (determine_movement_state).chain().after(GameSet::Input),
         );
         app.register_ldtk_entity::<PlayerBundle>("Player");
         app.add_observer(on_player_spawned);
@@ -119,28 +117,6 @@ fn determine_movement_state(
     };
     if *state != next_state {
         *state = next_state;
-    }
-}
-
-fn determine_facing(player: Single<(&mut FacingDirection, &LinearVelocity), With<Player>>) {
-    let (mut facing, vel) = player.into_inner();
-    let is_walking = vel.x.abs() > 0.1;
-    if !is_walking {
-        return;
-    }
-    let next_facing = if vel.x > 0.0 {
-        FacingDirection::Right
-    } else {
-        FacingDirection::Left
-    };
-    if *facing != next_facing {
-        *facing = next_facing;
-    }
-}
-
-fn update_facing(mut query: Query<(&FacingDirection, &mut Sprite), Changed<FacingDirection>>) {
-    for (facing, mut sprite) in &mut query {
-        sprite.flip_x = *facing == FacingDirection::Left;
     }
 }
 
