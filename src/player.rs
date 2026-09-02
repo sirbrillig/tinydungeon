@@ -37,6 +37,7 @@ struct PlayerBundle {
     friction: Friction,
     collider: Collider,
     ground_detection: GroundDetection,
+    coyote_time: CoyoteTimer,
     ground_detector: ShapeCaster,
     axes: LockedAxes,
     anchor: Anchor,
@@ -56,6 +57,7 @@ impl Default for PlayerBundle {
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., PLAYER_HEIGHT),
             ground_detection: GroundDetection,
+            coyote_time: CoyoteTimer::default(),
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
                 // Put detector at the player's feet
@@ -155,15 +157,17 @@ fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
 
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player: Single<(&mut LinearVelocity, Has<OnGround>), With<Player>>,
+    player: Single<(&mut LinearVelocity, &mut CoyoteTimer), With<Player>>,
 ) {
-    let (mut vel, on_ground) = player.into_inner();
+    let (mut vel, mut coyote) = player.into_inner();
     vel.x = get_change_for_input(&keyboard_input);
     if keyboard_input.just_released(KeyCode::ArrowUp) && vel.0.y > 0.0 {
         vel.0.y = vel.0.y.min(PLAYER_JUMP_CUT_SPEED);
     }
-    if on_ground && keyboard_input.just_pressed(KeyCode::ArrowUp) {
+    if coyote.can_jump() && keyboard_input.just_pressed(KeyCode::ArrowUp) {
         vel.y = PLAYER_JUMP_SPEED;
+        // End the timer when actually jumping.
+        coyote.end();
     }
 }
 
