@@ -35,15 +35,15 @@ fn ground_detection(
     mut commands: Commands,
     query: Query<(Entity, &ShapeHits, Has<OnGround>), With<GroundDetection>>,
 ) {
-    for (player_entity, hits, was_on_ground) in query {
+    for (entity, hits, was_on_ground) in query {
         let is_on_ground = !hits.is_empty();
         if is_on_ground == was_on_ground {
-            return;
+            continue;
         }
         if is_on_ground {
-            commands.entity(player_entity).insert(OnGround);
+            commands.entity(entity).insert(OnGround);
         } else {
-            commands.entity(player_entity).remove::<OnGround>();
+            commands.entity(entity).remove::<OnGround>();
         }
     }
 }
