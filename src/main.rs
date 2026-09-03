@@ -1,3 +1,4 @@
+mod ai;
 mod animation;
 mod debug;
 mod enemies;
@@ -41,6 +42,7 @@ impl Plugin for GamePlugin {
             WallPlugin,
             PhysicsPlugins::default().with_length_unit(50.0),
             DebugPlugin,
+            ai::plugin,
         ));
         app.insert_gizmo_config(
             PhysicsGizmos::default(),

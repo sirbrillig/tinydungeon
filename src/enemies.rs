@@ -1,9 +1,9 @@
+use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
+use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
 use crate::animation::SpriteAnimation;
 use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
 use crate::player::Player;
-use avian2d::dynamics::rigid_body::LinearVelocity;
-use avian2d::physics_transform::Position;
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{Friction, LockedAxes, RigidBody},
@@ -91,10 +91,8 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_enemy);
-        app.add_systems(Update, (wait_for_player, move_toward_entity).chain());
         app.register_ldtk_entity::<EnemyBundle>("Enemy");
         app.add_observer(on_spawned);
-        app.add_observer(on_test_action);
     }
 }
 
@@ -111,8 +109,7 @@ fn on_spawned(
         Behave::Forever => {
             Behave::Sequence => {
                 // @todo stop if player is not near
-                Behave::spawn_named("Wait until player is near", WaitUntilPlayerIsNear { player: *player }),
-                Behave::trigger(TestAction),
+                Behave::spawn_named("Wait until player is near", WaitUntilPlayerIsNear),
                 Behave::spawn_named("Move toward player", MoveTowardEntity { target: *player }),
             }
         }
@@ -122,79 +119,6 @@ fn on_spawned(
         BehaveTree::new(tree).with_logging(true),
         ChildOf(event.entity),
     ));
-}
-
-#[derive(Component, Clone)]
-struct WaitUntilPlayerIsNear {
-    player: Entity,
-}
-
-#[derive(Component, Clone, Copy)]
-struct DetectionDistance(f32);
-
-fn wait_for_player(
-    query: Query<(&WaitUntilPlayerIsNear, &BehaveCtx)>,
-    mut commands: Commands,
-    entities: Query<&Position>,
-    mover_props: Query<&DetectionDistance>,
-) {
-    for (task, ctx) in query.iter() {
-        let Ok(player_pos) = entities.get(task.player) else {
-            continue;
-        };
-        let Ok(enemy_pos) = entities.get(ctx.target_entity()) else {
-            continue;
-        };
-        let Ok(near_distance) = mover_props.get(ctx.target_entity()) else {
-            continue;
-        };
-        let distance_to_player = player_pos.distance_squared(enemy_pos.0);
-        if distance_to_player <= near_distance.0 {
-            commands.trigger(ctx.success());
-        }
-    }
-}
-
-#[derive(Component, Clone)]
-struct MoveTowardEntity {
-    target: Entity,
-}
-
-fn move_toward_entity(
-    query: Query<(&MoveTowardEntity, &BehaveCtx)>,
-    mut commands: Commands,
-    entities: Query<&Position>,
-    mut mover_props: Query<(&mut LinearVelocity, &MovementSpeed)>,
-) {
-    for (task, ctx) in query.iter() {
-        let Ok(target_pos) = entities.get(task.target) else {
-            continue;
-        };
-        let Ok(mover_pos) = entities.get(ctx.target_entity()) else {
-            continue;
-        };
-        let direction = if target_pos.x > mover_pos.x {
-            FacingDirection::Right
-        } else {
-            FacingDirection::Left
-        };
-        let Ok((mut vel, speed)) = mover_props.get_mut(ctx.target_entity()) else {
-            continue;
-        };
-        vel.x = match direction {
-            FacingDirection::Left => -speed.0,
-            FacingDirection::Right => speed.0,
-        };
-        commands.trigger(ctx.success());
-    }
-}
-
-#[derive(Component, Default, Clone)]
-struct TestAction;
-
-fn on_test_action(trigger: On<BehaveTrigger<TestAction>>, mut commands: Commands) {
-    println!("testing!");
-    commands.trigger(trigger.ctx().success());
 }
 
 fn setup_enemy(
