@@ -1,4 +1,4 @@
-use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
+use crate::ai::tasks::move_toward_entity::{ChaseTarget, MoveTowardEntity};
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
 use crate::animation::SpriteAnimation;
 use crate::animation::{AnimationSet, CharacterAnimationClip};
@@ -91,17 +91,23 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_enemy);
+        app.add_systems(Update, set_chase_target);
         app.register_ldtk_entity::<EnemyBundle>("Enemy");
         app.add_observer(on_spawned);
     }
 }
 
-fn on_spawned(
-    event: On<Add, Enemy>,
+fn set_chase_target(
     mut commands: Commands,
-    animations: Res<EnemyAnimations>,
     player: Single<Entity, With<Player>>,
+    query: Query<Entity, (With<Enemy>, Without<ChaseTarget>)>,
 ) {
+    for entity in query.iter() {
+        commands.entity(entity).insert(ChaseTarget(*player));
+    }
+}
+
+fn on_spawned(event: On<Add, Enemy>, mut commands: Commands, animations: Res<EnemyAnimations>) {
     // Add animation map (must do in a System so we can access World things like commands)
     commands.entity(event.entity).insert(animations.0.clone());
 
@@ -110,7 +116,7 @@ fn on_spawned(
             Behave::Sequence => {
                 // @todo stop if player is not near
                 Behave::spawn_named("Wait until player is near", WaitUntilPlayerIsNear),
-                Behave::spawn_named("Move toward player", MoveTowardEntity { target: *player }),
+                Behave::spawn_named("Move toward player", MoveTowardEntity),
             }
         }
     };

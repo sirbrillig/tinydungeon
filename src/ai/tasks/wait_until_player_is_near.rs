@@ -17,14 +17,11 @@ pub fn plugin(app: &mut App) {
 fn wait_for_player(
     query: Query<&BehaveCtx, With<WaitUntilPlayerIsNear>>,
     mut commands: Commands,
-    player: Single<Entity, With<Player>>,
+    player_pos: Single<&Position, With<Player>>,
     entities: Query<&Position>,
     mover_props: Query<&DetectionDistance>,
 ) {
     for ctx in query.iter() {
-        let Ok(player_pos) = entities.get(*player) else {
-            continue;
-        };
         let Ok(enemy_pos) = entities.get(ctx.target_entity()) else {
             continue;
         };
