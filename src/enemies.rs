@@ -45,6 +45,8 @@ struct EnemyBundle {
     anchor: Anchor,
     animation: SpriteAnimation,
     facing: FacingDirection,
+    // @todo only add this when needed for a enemy
+    detection_distance: DetectionDistance,
 }
 
 impl Default for EnemyBundle {
@@ -79,6 +81,7 @@ impl Default for EnemyBundle {
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             },
             facing: FacingDirection::Right,
+            detection_distance: DetectionDistance(3500.0),
         }
     }
 }
@@ -126,10 +129,14 @@ struct WaitUntilPlayerIsNear {
     player: Entity,
 }
 
+#[derive(Component, Clone, Copy)]
+struct DetectionDistance(f32);
+
 fn wait_for_player(
     query: Query<(&WaitUntilPlayerIsNear, &BehaveCtx)>,
     mut commands: Commands,
     entities: Query<&Position>,
+    mover_props: Query<&DetectionDistance>,
 ) {
     for (task, ctx) in query.iter() {
         let Ok(player_pos) = entities.get(task.player) else {
@@ -138,10 +145,11 @@ fn wait_for_player(
         let Ok(enemy_pos) = entities.get(ctx.target_entity()) else {
             continue;
         };
+        let Ok(near_distance) = mover_props.get(ctx.target_entity()) else {
+            continue;
+        };
         let distance_to_player = player_pos.distance_squared(enemy_pos.0);
-        // @todo make this configurable
-        let near_distance = 3500.0;
-        if distance_to_player <= near_distance {
+        if distance_to_player <= near_distance.0 {
             commands.trigger(ctx.success());
         }
     }
