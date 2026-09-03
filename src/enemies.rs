@@ -15,7 +15,6 @@ use bevy_behave::prelude::*;
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 use std::collections::HashMap;
 
-const ENEMY_SPEED: f32 = 25.0;
 const ENEMY_HEIGHT: f32 = 16.0;
 const ENEMY_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
 const ENEMY_FOOT_HEIGHT: f32 = 2.0;
@@ -39,6 +38,7 @@ struct EnemyBundle {
     body: RigidBody,
     friction: Friction,
     collider: Collider,
+    speed: MovementSpeed,
     ground_detection: GroundDetection,
     ground_detector: ShapeCaster,
     axes: LockedAxes,
@@ -58,6 +58,7 @@ impl Default for EnemyBundle {
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., ENEMY_HEIGHT),
+            speed: MovementSpeed(25.0),
             ground_detection: GroundDetection,
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., ENEMY_FOOT_HEIGHT),
@@ -109,7 +110,7 @@ fn on_spawned(
                 // @todo stop if player is not near
                 Behave::spawn_named("Wait until player is near", WaitUntilPlayerIsNear { player: *player }),
                 Behave::trigger(TestAction),
-                Behave::spawn_named("Move toward player", MoveTowardEntity { target: *player, speed: ENEMY_SPEED }),
+                Behave::spawn_named("Move toward player", MoveTowardEntity { target: *player }),
             }
         }
     };
@@ -149,33 +150,32 @@ fn wait_for_player(
 #[derive(Component, Clone)]
 struct MoveTowardEntity {
     target: Entity,
-    speed: f32,
 }
 
 fn move_toward_entity(
     query: Query<(&MoveTowardEntity, &BehaveCtx)>,
     mut commands: Commands,
     entities: Query<&Position>,
-    mut velos: Query<&mut LinearVelocity>,
+    mut mover_props: Query<(&mut LinearVelocity, &MovementSpeed)>,
 ) {
     for (task, ctx) in query.iter() {
         let Ok(target_pos) = entities.get(task.target) else {
             continue;
         };
-        let Ok(enemy_pos) = entities.get(ctx.target_entity()) else {
+        let Ok(mover_pos) = entities.get(ctx.target_entity()) else {
             continue;
         };
-        let direction = if target_pos.x > enemy_pos.x {
+        let direction = if target_pos.x > mover_pos.x {
             FacingDirection::Right
         } else {
             FacingDirection::Left
         };
-        let Ok(mut vel) = velos.get_mut(ctx.target_entity()) else {
+        let Ok((mut vel, speed)) = mover_props.get_mut(ctx.target_entity()) else {
             continue;
         };
         vel.x = match direction {
-            FacingDirection::Left => -task.speed,
-            FacingDirection::Right => task.speed,
+            FacingDirection::Left => -speed.0,
+            FacingDirection::Right => speed.0,
         };
         commands.trigger(ctx.success());
     }

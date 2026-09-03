@@ -10,7 +10,6 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_ecs_ldtk::{LdtkEntity, Worldly, app::LdtkEntityAppExt};
 use std::collections::HashMap;
 
-const PLAYER_SPEED: f32 = 90.0;
 const PLAYER_JUMP_SPEED: f32 = 255.0;
 const PLAYER_JUMP_CUT_SPEED: f32 = 190.0;
 const PLAYER_HEIGHT: f32 = 20.0;
@@ -36,6 +35,7 @@ struct PlayerBundle {
     body: RigidBody,
     friction: Friction,
     collider: Collider,
+    speed: MovementSpeed,
     ground_detection: GroundDetection,
     coyote_time: CoyoteTimer,
     ground_detector: ShapeCaster,
@@ -56,6 +56,7 @@ impl Default for PlayerBundle {
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., PLAYER_HEIGHT),
+            speed: MovementSpeed(90.0),
             ground_detection: GroundDetection,
             coyote_time: CoyoteTimer::default(),
             ground_detector: ShapeCaster::new(
@@ -121,22 +122,21 @@ fn determine_movement_state(
 }
 
 fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
-    let change = if keyboard_input.pressed(KeyCode::ArrowRight) {
+    if keyboard_input.pressed(KeyCode::ArrowRight) {
         1.0
     } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
         -1.0
     } else {
         0.0
-    };
-    change * PLAYER_SPEED
+    }
 }
 
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player: Single<(&mut LinearVelocity, &mut CoyoteTimer), With<Player>>,
+    player: Single<(&mut LinearVelocity, &MovementSpeed, &mut CoyoteTimer), With<Player>>,
 ) {
-    let (mut vel, mut coyote) = player.into_inner();
-    vel.x = get_change_for_input(&keyboard_input);
+    let (mut vel, speed, mut coyote) = player.into_inner();
+    vel.x = get_change_for_input(&keyboard_input) * speed.0;
     if keyboard_input.just_released(KeyCode::ArrowUp) && vel.0.y > 0.0 {
         vel.0.y = vel.0.y.min(PLAYER_JUMP_CUT_SPEED);
     }
