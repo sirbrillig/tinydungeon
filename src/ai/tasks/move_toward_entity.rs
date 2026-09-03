@@ -2,7 +2,10 @@ use avian2d::{dynamics::rigid_body::LinearVelocity, physics_transform::Position}
 use bevy::prelude::*;
 use bevy_behave::prelude::*;
 
-use crate::movement::{FacingDirection, MovementSpeed};
+use crate::{
+    ai::AiSet,
+    movement::{FacingDirection, MovementSpeed},
+};
 
 #[derive(Component, Clone)]
 pub struct MoveTowardEntity;
@@ -11,7 +14,7 @@ pub struct MoveTowardEntity;
 pub struct ChaseTarget(pub Entity);
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, move_toward_entity);
+    app.add_systems(Update, move_toward_entity.in_set(AiSet::Behavior));
 }
 
 fn move_toward_entity(

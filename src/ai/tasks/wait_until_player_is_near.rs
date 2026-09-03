@@ -2,7 +2,7 @@ use avian2d::physics_transform::Position;
 use bevy::prelude::*;
 use bevy_behave::prelude::*;
 
-use crate::player::Player;
+use crate::{ai::AiSet, player::Player};
 
 #[derive(Component, Clone, Copy)]
 pub struct WaitUntilPlayerIsNear;
@@ -11,7 +11,7 @@ pub struct WaitUntilPlayerIsNear;
 pub struct DetectionDistance(pub f32);
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, wait_for_player);
+    app.add_systems(Update, wait_for_player.in_set(AiSet::Behavior));
 }
 
 fn wait_for_player(
