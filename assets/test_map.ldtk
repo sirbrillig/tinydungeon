@@ -229,7 +229,7 @@
 			"fieldDefs": []
 		},
 		{
-			"identifier": "Enemy",
+			"identifier": "Orc",
 			"uid": 11,
 			"tags": [],
 			"exportToToc": false,
@@ -372,7 +372,7 @@
 							"__worldY": 168
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Orc",
 							"__grid": [26,20],
 							"__pivot": [0.5,0.5],
 							"__tags": [],
