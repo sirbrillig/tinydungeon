@@ -109,6 +109,7 @@ fn update_sprites(
             index: 0,
         });
         animation.frames = clip.frames;
+        animation.timer.reset();
     }
 }
 
@@ -116,7 +117,7 @@ fn determine_facing(mut query: Query<(&mut FacingDirection, &LinearVelocity), Wi
     for (mut facing, vel) in query.iter_mut() {
         let is_walking = vel.x.abs() > 0.1;
         if !is_walking {
-            return;
+            continue;
         }
         let next_facing = if vel.x > 0.0 {
             FacingDirection::Right
