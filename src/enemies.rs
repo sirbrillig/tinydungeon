@@ -30,6 +30,7 @@ pub struct EnemyCoreBundle {
     friction: Friction,
     collider: Collider,
     speed: MovementSpeed,
+    intended_x_vel: IntendedXVelocity,
     ground_detection: GroundDetection,
     ground_detector: ShapeCaster,
     axes: LockedAxes,
@@ -72,6 +73,7 @@ impl EnemyCoreBundle {
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., settings.sprite_height),
             speed: MovementSpeed(settings.speed),
+            intended_x_vel: IntendedXVelocity(0.0),
             ground_detection: GroundDetection,
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., settings.ground_detector_height),
@@ -106,6 +108,7 @@ impl Default for EnemyCoreBundle {
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., ENEMY_HEIGHT),
             speed: MovementSpeed(25.0),
+            intended_x_vel: IntendedXVelocity(0.0),
             ground_detection: GroundDetection,
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., ENEMY_FOOT_HEIGHT),

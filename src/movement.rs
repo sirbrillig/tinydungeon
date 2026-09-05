@@ -8,7 +8,7 @@ impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (ground_detection, coyote_timer)
+            (ground_detection, coyote_timer, set_intended_velocity)
                 .chain()
                 .before(GameSet::Input),
         );
@@ -23,6 +23,9 @@ pub struct OnGround;
 
 #[derive(Component, Copy, Clone)]
 pub struct MovementSpeed(pub f32);
+
+#[derive(Component, Copy, Clone)]
+pub struct IntendedXVelocity(pub f32);
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
 pub enum MovementState {
@@ -92,5 +95,11 @@ fn coyote_timer(
             continue;
         }
         coyote.timer.tick(time.delta());
+    }
+}
+
+fn set_intended_velocity(mut query: Query<(&mut LinearVelocity, &IntendedXVelocity)>) {
+    for (mut vel, intent) in query.iter_mut() {
+        vel.x = intent.0;
     }
 }
