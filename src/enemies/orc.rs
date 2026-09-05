@@ -1,3 +1,4 @@
+use crate::ai::tasks::attack::Attack;
 use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
 use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
@@ -62,8 +63,9 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
         Behave::Forever => {
             Behave::Fallback => {
                 Behave::Sequence => {
+                    // @todo only attack if the enemy is facing the player
                    Behave::spawn_named("Is player in attack range", TargetInRange {range: 600.0 }),
-                   Behave::Wait(0.8), // @todo make an attack
+                   Behave::spawn_named("Attack", Attack),
                 },
                 Behave::Sequence => {
                     Behave::spawn_named("Is player in chase range", TargetInRange {range: 3500.0}),
@@ -118,11 +120,23 @@ fn setup_enemy(
         )),
         frames: 1,
     };
+    let attack = CharacterAnimationClip {
+        image: asset_server.load("Orc-Attack01.png"),
+        layout: layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::splat(100),
+            6,
+            1,
+            None,
+            None,
+        )),
+        frames: 6,
+    };
     commands.insert_resource(OrcAnimations(AnimationSet {
         animation_map: HashMap::from([
             (AnimationKey::Idle, idle),
             (AnimationKey::Walking, walk),
             (AnimationKey::Jumping, jump),
+            (AnimationKey::Attacking, attack),
         ]),
     }));
 }

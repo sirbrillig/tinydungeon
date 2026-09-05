@@ -1,5 +1,6 @@
 mod ai;
 mod animation;
+mod attack;
 mod debug;
 mod enemies;
 mod movement;

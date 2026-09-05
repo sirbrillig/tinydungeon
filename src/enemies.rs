@@ -1,7 +1,7 @@
-use crate::{ai::tasks::move_toward_entity::ChaseTarget, animation::AnimationKey};
 use crate::animation::SpriteAnimation;
 use crate::movement::*;
 use crate::player::Player;
+use crate::{ai::tasks::move_toward_entity::ChaseTarget, animation::AnimationKey};
 use avian2d::{
     collision::collider::{Collider, CollisionLayers},
     dynamics::rigid_body::{Friction, LockedAxes, RigidBody},

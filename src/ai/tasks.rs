@@ -1,5 +1,6 @@
 use bevy::app::App;
 
+pub mod attack;
 pub mod move_toward_entity;
 pub mod stop_moving;
 pub mod target_in_range;
@@ -11,5 +12,6 @@ pub fn plugin(app: &mut App) {
         move_toward_entity::plugin,
         stop_moving::plugin,
         target_in_range::plugin,
+        attack::plugin,
     ));
 }

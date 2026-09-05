@@ -1,5 +1,6 @@
 use crate::{
     GameSet,
+    attack::Attacking,
     movement::{FacingDirection, MovementState},
 };
 use avian2d::dynamics::rigid_body::LinearVelocity;
@@ -58,12 +59,13 @@ impl Plugin for AnimationPlugin {
     }
 }
 
-fn determine_animation_key(mut query: Query<(&MovementState, &mut AnimationKey)>) {
-    for (state, mut key) in query.iter_mut() {
-        let next_key = match state {
-            MovementState::Jumping => AnimationKey::Jumping,
-            MovementState::Walking => AnimationKey::Walking,
-            MovementState::Idle => AnimationKey::Idle,
+fn determine_animation_key(mut query: Query<(&MovementState, &mut AnimationKey, Has<Attacking>)>) {
+    for (state, mut key, is_attacking) in query.iter_mut() {
+        let next_key = match (is_attacking, state) {
+            (true, _) => AnimationKey::Attacking,
+            (false, MovementState::Jumping) => AnimationKey::Jumping,
+            (false, MovementState::Walking) => AnimationKey::Walking,
+            (false, MovementState::Idle) => AnimationKey::Idle,
         };
         if *key != next_key {
             *key = next_key;
@@ -98,6 +100,7 @@ fn update_sprites(
 ) {
     for (key, mut sprite, mut animation, animation_set) in &mut query {
         let Some(clip) = animation_set.clip_for_key(key) else {
+            println!("no clip for key {:?}", key);
             continue;
         };
         sprite.image = clip.image.clone();

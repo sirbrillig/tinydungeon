@@ -1,0 +1,42 @@
+use std::time::Duration;
+
+use bevy::prelude::*;
+use bevy_behave::prelude::*;
+
+use crate::{ai::AiSet, attack::Attacking};
+
+#[derive(Component, Clone)]
+pub struct Attack;
+
+pub fn plugin(app: &mut App) {
+    app.add_systems(
+        Update,
+        (action, attack_timer).chain().in_set(AiSet::Behavior),
+    );
+}
+
+fn action(query: Query<&BehaveCtx, Added<Attack>>, mut commands: Commands) {
+    for ctx in query.iter() {
+        commands.entity(ctx.target_entity()).insert(Attacking {
+            timer: Timer::new(Duration::from_secs(1), TimerMode::Once),
+        });
+    }
+}
+
+fn attack_timer(
+    query: Query<&BehaveCtx, With<Attack>>,
+    mut commands: Commands,
+    mut attackers: Query<&mut Attacking>,
+    time: Res<Time>,
+) {
+    for ctx in query.iter() {
+        let Ok(mut attacking) = attackers.get_mut(ctx.target_entity()) else {
+            continue;
+        };
+        attacking.timer.tick(time.delta());
+        if attacking.timer.is_finished() {
+            commands.entity(ctx.target_entity()).remove::<Attacking>();
+            commands.trigger(ctx.success());
+        }
+    }
+}
