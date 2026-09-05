@@ -38,6 +38,66 @@ pub struct EnemyCoreBundle {
     facing: FacingDirection,
 }
 
+pub struct EnemySettings {
+    sprite_height: f32,
+    sprite_height_offset: f32,
+    speed: f32,
+    ground_detector_height: f32,
+    ground_detector_anchor: f32,
+    ground_detector_range: f32,
+    animation_default_frames: usize,
+}
+
+impl Default for EnemySettings {
+    fn default() -> Self {
+        EnemySettings {
+            sprite_height: ENEMY_HEIGHT,
+            sprite_height_offset: ENEMY_HEIGHT_ANCHOR_OFFSET,
+            speed: 25.0,
+            ground_detector_height: ENEMY_FOOT_HEIGHT,
+            ground_detector_anchor: ENEMY_FOOT_ANCHOR,
+            ground_detector_range: ENEMY_FOOT_RANGE,
+            animation_default_frames: 6,
+        }
+    }
+}
+
+impl EnemyCoreBundle {
+    pub fn with_settings(
+        settings: EnemySettings
+    ) ->Self {
+        Self {
+            enemy: Enemy,
+            state: MovementState::Idle,
+            body: RigidBody::Dynamic,
+            friction: Friction::ZERO
+                .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
+            collider: Collider::rectangle(16., settings.sprite_height),
+            speed: MovementSpeed(settings.speed),
+            ground_detection: GroundDetection,
+            ground_detector: ShapeCaster::new(
+                Collider::rectangle(14., settings.ground_detector_height),
+                // Put detector at the feet
+                Vec2 {
+                    x: 0.0,
+                    y: settings.ground_detector_anchor,
+                },
+                0.0,
+                Dir2::NEG_Y,
+            )
+            .with_max_distance(settings.ground_detector_range),
+            axes: LockedAxes::ROTATION_LOCKED,
+            // Anchor is down a bit because sprite is not vertically centered
+            anchor: Anchor(Vec2::new(0.0, settings.sprite_height_offset)),
+            animation: SpriteAnimation {
+                frames: settings.animation_default_frames,
+                timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+            },
+            facing: FacingDirection::Right,
+        }
+    }
+}
+
 impl Default for EnemyCoreBundle {
     fn default() -> Self {
         Self {

@@ -1,15 +1,11 @@
 use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
-use crate::animation::{AnimationSet, CharacterAnimationClip, SpriteAnimation};
-use crate::enemies::EnemyCoreBundle;
+use crate::animation::{AnimationSet, CharacterAnimationClip};
+use crate::enemies::{EnemyCoreBundle, EnemySettings};
 use crate::movement::*;
-use avian2d::collision::collider::Collider;
-use avian2d::spatial_query::ShapeCaster;
 use bevy::prelude::*;
-use bevy::sprite::Anchor;
 use bevy_behave::behave;
 use bevy_behave::prelude::*;
-use bevy_ecs_ldtk::Worldly;
 use bevy_ecs_ldtk::{LdtkEntity, app::LdtkEntityAppExt};
 use std::collections::HashMap;
 
@@ -25,8 +21,6 @@ pub struct Orc;
 #[derive(Bundle, LdtkEntity)]
 struct OrcBundle {
     orc: Orc,
-    #[worldly]
-    worldly: Worldly,
     #[sprite_sheet("Orc-Idle.png", 100, 100, 6, 1, 0, 0, 0)]
     sprite_sheet: Sprite,
     core: EnemyCoreBundle,
@@ -37,31 +31,19 @@ impl Default for OrcBundle {
     fn default() -> Self {
         Self {
             orc: Orc,
-            worldly: Worldly::default(),
             sprite_sheet: Sprite::default(),
             detection_distance: DetectionDistance(3500.0),
-            core: EnemyCoreBundle {
-                speed: MovementSpeed(22.0),
-                collider: Collider::rectangle(16., ENEMY_HEIGHT),
-                ground_detector: ShapeCaster::new(
-                    Collider::rectangle(14., ENEMY_FOOT_HEIGHT),
-                    // Put detector at the feet
-                    Vec2 {
-                        x: 0.0,
-                        y: ENEMY_FOOT_ANCHOR,
-                    },
-                    0.0,
-                    Dir2::NEG_Y,
-                )
-                .with_max_distance(ENEMY_FOOT_RANGE),
-                // Anchor is down a bit because sprite is not vertically centered
-                anchor: Anchor(Vec2::new(0.0, ENEMY_HEIGHT_ANCHOR_OFFSET)),
-                animation: SpriteAnimation {
-                    frames: 6,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                ..Default::default()
-            },
+            core: EnemyCoreBundle::with_settings(
+                EnemySettings {
+                    sprite_height: ENEMY_HEIGHT,
+                    sprite_height_offset: ENEMY_HEIGHT_ANCHOR_OFFSET,
+                    speed: 25.0,
+                    ground_detector_height: ENEMY_FOOT_HEIGHT,
+                    ground_detector_anchor: ENEMY_FOOT_ANCHOR,
+                    ground_detector_range: ENEMY_FOOT_RANGE,
+                    animation_default_frames: 6,
+                }
+            ),
         }
     }
 }
