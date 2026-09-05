@@ -8,13 +8,22 @@ use std::collections::HashMap;
 
 #[derive(Component, Clone)]
 pub struct AnimationSet {
-    pub animation_map: HashMap<MovementState, CharacterAnimationClip>,
+    pub animation_map: HashMap<AnimationKey, CharacterAnimationClip>,
 }
 
 impl AnimationSet {
-    pub fn clip_for_state(&self, state: &MovementState) -> Option<&CharacterAnimationClip> {
-        self.animation_map.get(state)
+    pub fn clip_for_key(&self, key: &AnimationKey) -> Option<&CharacterAnimationClip> {
+        self.animation_map.get(key)
     }
+}
+
+#[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
+pub enum AnimationKey {
+    #[default]
+    Idle,
+    Walking,
+    Jumping,
+    Attacking,
 }
 
 #[derive(Component)]
@@ -37,14 +46,28 @@ impl Plugin for AnimationPlugin {
         app.add_systems(
             Update,
             (
+                determine_animation_key,
                 determine_facing,
                 update_facing,
                 update_sprites,
                 animate_sprites,
             )
                 .chain()
-                .in_set(GameSet::PostInput),
+                .in_set(GameSet::Animate),
         );
+    }
+}
+
+fn determine_animation_key(mut query: Query<(&MovementState, &mut AnimationKey)>) {
+    for (state, mut key) in query.iter_mut() {
+        let next_key = match state {
+            MovementState::Jumping => AnimationKey::Jumping,
+            MovementState::Walking => AnimationKey::Walking,
+            MovementState::Idle => AnimationKey::Idle,
+        };
+        if *key != next_key {
+            *key = next_key;
+        }
     }
 }
 
@@ -65,16 +88,16 @@ fn animate_sprites(time: Res<Time>, mut query: Query<(&mut SpriteAnimation, &mut
 fn update_sprites(
     mut query: Query<
         (
-            &MovementState,
+            &AnimationKey,
             &mut Sprite,
             &mut SpriteAnimation,
             &AnimationSet,
         ),
-        Changed<MovementState>,
+        Changed<AnimationKey>,
     >,
 ) {
-    for (state, mut sprite, mut animation, animation_set) in &mut query {
-        let Some(clip) = animation_set.clip_for_state(state) else {
+    for (key, mut sprite, mut animation, animation_set) in &mut query {
+        let Some(clip) = animation_set.clip_for_key(key) else {
             continue;
         };
         sprite.image = clip.image.clone();

@@ -14,6 +14,7 @@ impl Plugin for MovementPlugin {
                 .chain()
                 .before(GameSet::Input),
         );
+        app.add_systems(Update, determine_movement_state.in_set(GameSet::PostInput));
     }
 }
 
@@ -73,6 +74,22 @@ impl CoyoteTimer {
 
     pub fn can_jump(&self) -> bool {
         !self.timer.is_finished()
+    }
+}
+
+fn determine_movement_state(
+    mut query: Query<(&mut MovementState, &LinearVelocity, Has<OnGround>)>,
+) {
+    for (mut state, vel, on_ground) in query.iter_mut() {
+        let is_walking = vel.x.abs() > 0.1;
+        let next_state = match (on_ground, is_walking) {
+            (false, _) => MovementState::Jumping,
+            (true, true) => MovementState::Walking,
+            (true, false) => MovementState::Idle,
+        };
+        if *state != next_state {
+            *state = next_state;
+        }
     }
 }
 

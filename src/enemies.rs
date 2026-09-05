@@ -1,4 +1,4 @@
-use crate::ai::tasks::move_toward_entity::ChaseTarget;
+use crate::{ai::tasks::move_toward_entity::ChaseTarget, animation::AnimationKey};
 use crate::animation::SpriteAnimation;
 use crate::movement::*;
 use crate::player::Player;
@@ -26,6 +26,7 @@ pub struct Enemy;
 pub struct EnemyCoreBundle {
     enemy: Enemy,
     state: MovementState,
+    animation_key: AnimationKey,
     body: RigidBody,
     friction: Friction,
     layers: CollisionLayers,
@@ -96,6 +97,7 @@ impl Default for EnemyCoreBundle {
         Self {
             enemy: Enemy,
             state: MovementState::Idle,
+            animation_key: AnimationKey::Idle,
             body: RigidBody::Dynamic,
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),

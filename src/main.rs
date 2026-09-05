@@ -25,6 +25,7 @@ use wall::WallPlugin;
 pub enum GameSet {
     Input,
     PostInput,
+    Animate,
 }
 
 pub struct GamePlugin;
@@ -53,7 +54,10 @@ impl Plugin for GamePlugin {
         );
         app.insert_resource(Gravity(Vec2::NEG_Y * 1000.0));
         app.insert_resource(LevelSelection::index(0));
-        app.configure_sets(Update, (GameSet::Input, GameSet::PostInput).chain());
+        app.configure_sets(
+            Update,
+            (GameSet::Input, GameSet::PostInput, GameSet::Animate).chain(),
+        );
     }
 }
 

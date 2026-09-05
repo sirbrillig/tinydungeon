@@ -1,9 +1,8 @@
 use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
 use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
-use crate::animation::{AnimationSet, CharacterAnimationClip};
+use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
 use crate::enemies::{EnemyCoreBundle, EnemySettings};
-use crate::movement::*;
 use bevy::prelude::*;
 use bevy_behave::behave;
 use bevy_behave::prelude::*;
@@ -121,9 +120,9 @@ fn setup_enemy(
     };
     commands.insert_resource(OrcAnimations(AnimationSet {
         animation_map: HashMap::from([
-            (MovementState::Idle, idle),
-            (MovementState::Walking, walk),
-            (MovementState::Jumping, jump),
+            (AnimationKey::Idle, idle),
+            (AnimationKey::Walking, walk),
+            (AnimationKey::Jumping, jump),
         ]),
     }));
 }

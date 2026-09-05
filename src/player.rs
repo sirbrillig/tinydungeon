@@ -1,4 +1,4 @@
-use crate::animation::{AnimationSet, CharacterAnimationClip};
+use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
 use crate::{GameSet, animation::SpriteAnimation};
 use avian2d::collision::collider::CollisionLayers;
@@ -29,6 +29,7 @@ pub struct Player;
 struct PlayerBundle {
     player: Player,
     state: MovementState,
+    animation_key: AnimationKey,
     #[sprite_sheet("Priest-Idle.png", 100, 100, 6, 1, 0, 0, 0)]
     sprite_sheet: Sprite,
     #[worldly]
@@ -52,6 +53,7 @@ impl Default for PlayerBundle {
         Self {
             player: Player,
             state: MovementState::Idle,
+            animation_key: AnimationKey::Idle,
             sprite_sheet: Sprite::default(),
             worldly: Worldly::default(),
             body: RigidBody::Dynamic,
@@ -91,10 +93,6 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
         app.add_systems(Update, move_player.in_set(GameSet::Input));
-        app.add_systems(
-            Update,
-            (determine_movement_state).chain().after(GameSet::Input),
-        );
         app.register_ldtk_entity::<PlayerBundle>("Player");
         app.add_observer(on_player_spawned);
     }
@@ -107,21 +105,6 @@ fn on_player_spawned(
 ) {
     // Add player animation map (must do in a System so we can access World things like commands)
     commands.entity(event.entity).insert(animations.0.clone());
-}
-
-fn determine_movement_state(
-    player: Single<(&mut MovementState, &LinearVelocity, Has<OnGround>), With<Player>>,
-) {
-    let (mut state, vel, on_ground) = player.into_inner();
-    let is_walking = vel.x.abs() > 0.1;
-    let next_state = match (on_ground, is_walking) {
-        (false, _) => MovementState::Jumping,
-        (true, true) => MovementState::Walking,
-        (true, false) => MovementState::Idle,
-    };
-    if *state != next_state {
-        *state = next_state;
-    }
 }
 
 fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
@@ -190,9 +173,9 @@ fn setup_player(
     };
     commands.insert_resource(PlayerAnimations(AnimationSet {
         animation_map: HashMap::from([
-            (MovementState::Idle, idle),
-            (MovementState::Walking, walk),
-            (MovementState::Jumping, jump),
+            (AnimationKey::Idle, idle),
+            (AnimationKey::Walking, walk),
+            (AnimationKey::Jumping, jump),
         ]),
     }));
 }
