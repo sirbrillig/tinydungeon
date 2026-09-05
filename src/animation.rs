@@ -7,6 +7,9 @@ use avian2d::dynamics::rigid_body::LinearVelocity;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
+#[derive(Component, Clone, Copy)]
+pub struct AnimationProgress(pub f32);
+
 #[derive(Component, Clone)]
 pub struct AnimationSet {
     pub animation_map: HashMap<AnimationKey, CharacterAnimationClip>,
@@ -73,16 +76,24 @@ fn determine_animation_key(mut query: Query<(&MovementState, &mut AnimationKey, 
     }
 }
 
-fn animate_sprites(time: Res<Time>, mut query: Query<(&mut SpriteAnimation, &mut Sprite)>) {
-    for (mut config, mut sprite) in &mut query {
-        // We track how long the current sprite has been displayed for
+fn animate_sprites(
+    time: Res<Time>,
+    mut query: Query<(
+        &mut SpriteAnimation,
+        &mut Sprite,
+        Option<&AnimationProgress>,
+    )>,
+) {
+    for (mut config, mut sprite, progress) in &mut query {
         config.timer.tick(time.delta());
-
-        // If it has been displayed for the user-defined amount of time (fps)...
         if config.timer.just_finished()
             && let Some(atlas) = &mut sprite.texture_atlas
         {
-            atlas.index = (atlas.index + 1) % config.frames.max(1);
+            atlas.index = match progress {
+                Some(progress) => ((progress.0 * config.frames as f32) as usize)
+                    .min(config.frames.saturating_sub(1)),
+                _ => (atlas.index + 1) % config.frames.max(1),
+            };
         }
     }
 }
