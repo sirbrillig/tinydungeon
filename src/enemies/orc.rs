@@ -1,4 +1,5 @@
 use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
+use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
 use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::enemies::{EnemyCoreBundle, EnemySettings};
@@ -33,17 +34,15 @@ impl Default for OrcBundle {
             orc: Orc,
             sprite_sheet: Sprite::default(),
             detection_distance: DetectionDistance(3500.0),
-            core: EnemyCoreBundle::with_settings(
-                EnemySettings {
-                    sprite_height: ENEMY_HEIGHT,
-                    sprite_height_offset: ENEMY_HEIGHT_ANCHOR_OFFSET,
-                    speed: 25.0,
-                    ground_detector_height: ENEMY_FOOT_HEIGHT,
-                    ground_detector_anchor: ENEMY_FOOT_ANCHOR,
-                    ground_detector_range: ENEMY_FOOT_RANGE,
-                    animation_default_frames: 6,
-                }
-            ),
+            core: EnemyCoreBundle::with_settings(EnemySettings {
+                sprite_height: ENEMY_HEIGHT,
+                sprite_height_offset: ENEMY_HEIGHT_ANCHOR_OFFSET,
+                speed: 25.0,
+                ground_detector_height: ENEMY_FOOT_HEIGHT,
+                ground_detector_anchor: ENEMY_FOOT_ANCHOR,
+                ground_detector_range: ENEMY_FOOT_RANGE,
+                animation_default_frames: 6,
+            }),
         }
     }
 }
@@ -62,15 +61,21 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
 
     let tree = behave! {
         Behave::Forever => {
-            Behave::Sequence => {
-                // @todo stop if player is not near
-                Behave::spawn_named("Wait until player is near", WaitUntilPlayerIsNear),
-                Behave::spawn_named("Move toward player", MoveTowardEntity),
+            Behave::Fallback => {
+                Behave::Sequence => {
+                   Behave::spawn_named("Is player in attack range", TargetInRange {range: 600.0 }),
+                   Behave::Wait(0.8), // @todo make an attack
+                },
+                Behave::Sequence => {
+                    Behave::spawn_named("Is player in chase range", TargetInRange {range: 3500.0}),
+                    Behave::spawn_named("Move toward player", MoveTowardEntity {near_distance: 600.0, far_distance: 3500.0}),
+                },
+                Behave::spawn_named("Is player in at least chase range", WaitUntilPlayerIsNear),
             }
         }
     };
     commands.spawn((
-        Name::new("Behave tree"),
+        Name::new("Orc"),
         BehaveTree::new(tree).with_logging(true),
         ChildOf(event.entity),
     ));

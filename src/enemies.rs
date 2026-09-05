@@ -63,9 +63,7 @@ impl Default for EnemySettings {
 }
 
 impl EnemyCoreBundle {
-    pub fn with_settings(
-        settings: EnemySettings
-    ) ->Self {
+    pub fn with_settings(settings: EnemySettings) -> Self {
         Self {
             enemy: Enemy,
             state: MovementState::Idle,

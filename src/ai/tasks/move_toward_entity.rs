@@ -8,7 +8,10 @@ use crate::{
 };
 
 #[derive(Component, Clone)]
-pub struct MoveTowardEntity;
+pub struct MoveTowardEntity {
+    pub near_distance: f32,
+    pub far_distance: f32,
+}
 
 #[derive(Component)]
 pub struct ChaseTarget(pub Entity);
@@ -18,12 +21,12 @@ pub fn plugin(app: &mut App) {
 }
 
 fn move_toward_entity(
-    query: Query<&BehaveCtx, With<MoveTowardEntity>>,
+    query: Query<(&MoveTowardEntity, &BehaveCtx)>,
     mut commands: Commands,
     entities: Query<&Position>,
     mut mover_props: Query<(&mut LinearVelocity, &ChaseTarget, &MovementSpeed, &Position)>,
 ) {
-    for ctx in query.iter() {
+    for (distance, ctx) in query.iter() {
         let Ok((mut vel, target, speed, mover_pos)) = mover_props.get_mut(ctx.target_entity())
         else {
             continue;
@@ -36,10 +39,22 @@ fn move_toward_entity(
         } else {
             FacingDirection::Left
         };
-        vel.x = match direction {
-            FacingDirection::Left => -speed.0,
-            FacingDirection::Right => speed.0,
-        };
-        commands.trigger(ctx.success());
+
+        let distance_to_player = target_pos.distance_squared(mover_pos.0);
+        if distance_to_player <= distance.near_distance {
+            // Stop when we get close
+            vel.x = 0.0;
+            commands.trigger(ctx.success());
+        } else if distance_to_player >= distance.far_distance {
+            // Stop if we get too far
+            vel.x = 0.0;
+            commands.trigger(ctx.success());
+        } else {
+            // Otherwise move toward target
+            vel.x = match direction {
+                FacingDirection::Left => -speed.0,
+                FacingDirection::Right => speed.0,
+            };
+        }
     }
 }
