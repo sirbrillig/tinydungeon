@@ -1,5 +1,7 @@
 use crate::GameSet;
-use avian2d::{dynamics::rigid_body::LinearVelocity, spatial_query::ShapeHits};
+use avian2d::{
+    dynamics::rigid_body::LinearVelocity, prelude::PhysicsLayer, spatial_query::ShapeHits,
+};
 use bevy::prelude::*;
 
 pub struct MovementPlugin;
@@ -13,6 +15,14 @@ impl Plugin for MovementPlugin {
                 .before(GameSet::Input),
         );
     }
+}
+
+#[derive(PhysicsLayer, Default)]
+pub enum GameLayers {
+    #[default]
+    Environment,
+    Player,
+    Enemies,
 }
 
 #[derive(Component)]

@@ -3,7 +3,7 @@ use crate::animation::SpriteAnimation;
 use crate::movement::*;
 use crate::player::Player;
 use avian2d::{
-    collision::collider::Collider,
+    collision::collider::{Collider, CollisionLayers},
     dynamics::rigid_body::{Friction, LockedAxes, RigidBody},
     spatial_query::ShapeCaster,
 };
@@ -28,6 +28,7 @@ pub struct EnemyCoreBundle {
     state: MovementState,
     body: RigidBody,
     friction: Friction,
+    layers: CollisionLayers,
     collider: Collider,
     speed: MovementSpeed,
     intended_x_vel: IntendedXVelocity,
@@ -66,15 +67,8 @@ impl Default for EnemySettings {
 impl EnemyCoreBundle {
     pub fn with_settings(settings: EnemySettings) -> Self {
         Self {
-            enemy: Enemy,
-            state: MovementState::Idle,
-            body: RigidBody::Dynamic,
-            friction: Friction::ZERO
-                .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
             collider: Collider::rectangle(16., settings.sprite_height),
             speed: MovementSpeed(settings.speed),
-            intended_x_vel: IntendedXVelocity(0.0),
-            ground_detection: GroundDetection,
             ground_detector: ShapeCaster::new(
                 Collider::rectangle(14., settings.ground_detector_height),
                 // Put detector at the feet
@@ -86,14 +80,13 @@ impl EnemyCoreBundle {
                 Dir2::NEG_Y,
             )
             .with_max_distance(settings.ground_detector_range),
-            axes: LockedAxes::ROTATION_LOCKED,
             // Anchor is down a bit because sprite is not vertically centered
             anchor: Anchor(Vec2::new(0.0, settings.sprite_height_offset)),
             animation: SpriteAnimation {
                 frames: settings.animation_default_frames,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             },
-            facing: FacingDirection::Right,
+            ..EnemyCoreBundle::default()
         }
     }
 }
@@ -106,6 +99,7 @@ impl Default for EnemyCoreBundle {
             body: RigidBody::Dynamic,
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
+            layers: CollisionLayers::new(GameLayers::Enemies, [GameLayers::Environment]),
             collider: Collider::rectangle(16., ENEMY_HEIGHT),
             speed: MovementSpeed(25.0),
             intended_x_vel: IntendedXVelocity(0.0),

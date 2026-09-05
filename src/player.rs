@@ -1,6 +1,7 @@
 use crate::animation::{AnimationSet, CharacterAnimationClip};
 use crate::movement::*;
 use crate::{GameSet, animation::SpriteAnimation};
+use avian2d::collision::collider::CollisionLayers;
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{Friction, LinearVelocity, LockedAxes, RigidBody},
@@ -34,6 +35,7 @@ struct PlayerBundle {
     worldly: Worldly,
     body: RigidBody,
     friction: Friction,
+    layers: CollisionLayers,
     collider: Collider,
     speed: MovementSpeed,
     ground_detection: GroundDetection,
@@ -55,6 +57,7 @@ impl Default for PlayerBundle {
             body: RigidBody::Dynamic,
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
+            layers: CollisionLayers::new(GameLayers::Player, [GameLayers::Environment]),
             collider: Collider::rectangle(16., PLAYER_HEIGHT),
             speed: MovementSpeed(90.0),
             ground_detection: GroundDetection,

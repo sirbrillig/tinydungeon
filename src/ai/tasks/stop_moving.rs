@@ -16,6 +16,7 @@ fn stop_moving(
     mut commands: Commands,
     mut mover_props: Query<&mut LinearVelocity>,
 ) {
+    // @todo use Intended vel
     for ctx in query.iter() {
         let Ok(mut vel) = mover_props.get_mut(ctx.target_entity()) else {
             continue;
