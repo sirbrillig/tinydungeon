@@ -65,9 +65,9 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
         Behave::Forever => {
             Behave::Fallback => {
                 Behave::Sequence => {
-                   Behave::spawn_named("Is player in attack range", TargetInRange {range: 600.0 }),
+                   Behave::spawn_named("Is player in attack range", TargetInRange {range: 600.0}),
                    Behave::spawn_named("Is facing player", IsFacingTarget),
-                   Behave::spawn_named("Attack", Attack),
+                   Behave::spawn_named("Attack", Attack {duration_secs: 1.0}),
                 },
                 Behave::Sequence => {
                     Behave::spawn_named("Is player in chase range", TargetInRange {range: 3500.0}),

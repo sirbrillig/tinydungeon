@@ -6,7 +6,9 @@ use bevy_behave::prelude::*;
 use crate::{ai::AiSet, animation::AnimationProgress, attack::Attacking};
 
 #[derive(Component, Clone)]
-pub struct Attack;
+pub struct Attack {
+    pub duration_secs: f32,
+}
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -15,10 +17,13 @@ pub fn plugin(app: &mut App) {
     );
 }
 
-fn action(query: Query<&BehaveCtx, Added<Attack>>, mut commands: Commands) {
-    for ctx in query.iter() {
+fn action(query: Query<(&Attack, &BehaveCtx), Added<Attack>>, mut commands: Commands) {
+    for (attack, ctx) in query.iter() {
         commands.entity(ctx.target_entity()).insert(Attacking {
-            timer: Timer::new(Duration::from_secs(1), TimerMode::Once),
+            timer: Timer::new(
+                Duration::from_secs_f32(attack.duration_secs),
+                TimerMode::Once,
+            ),
         });
         commands
             .entity(ctx.target_entity())
