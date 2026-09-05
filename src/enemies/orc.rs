@@ -1,4 +1,6 @@
 use crate::ai::tasks::attack::Attack;
+use crate::ai::tasks::face_target::FaceTarget;
+use crate::ai::tasks::is_facing_target::IsFacingTarget;
 use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
 use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
@@ -63,12 +65,13 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
         Behave::Forever => {
             Behave::Fallback => {
                 Behave::Sequence => {
-                    // @todo only attack if the enemy is facing the player
                    Behave::spawn_named("Is player in attack range", TargetInRange {range: 600.0 }),
+                   Behave::spawn_named("Is facing player", IsFacingTarget),
                    Behave::spawn_named("Attack", Attack),
                 },
                 Behave::Sequence => {
                     Behave::spawn_named("Is player in chase range", TargetInRange {range: 3500.0}),
+                    Behave::spawn_named("Face player", FaceTarget),
                     Behave::spawn_named("Move toward player", MoveTowardEntity {near_distance: 600.0, far_distance: 3500.0}),
                 },
                 Behave::spawn_named("Is player in at least chase range", WaitUntilPlayerIsNear),
