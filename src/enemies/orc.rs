@@ -1,4 +1,4 @@
-use crate::ai::tasks::attack::Attack;
+use crate::ai::tasks::attack::{Attack, HitBoxConfig};
 use crate::ai::tasks::face_target::FaceTarget;
 use crate::ai::tasks::is_facing_target::IsFacingTarget;
 use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
@@ -62,6 +62,16 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
     commands.entity(event.entity).insert(animations.0.clone());
     let attack_range = 700.0;
     let chase_range = 5000.0;
+    let attack = Attack {
+        duration_secs: 1.5,
+        active_frames: (3..5).into(),
+        hitbox: HitBoxConfig {
+            width: 16.0,
+            height: 22.0,
+            offset_x: 18.0,
+            offset_y: 0.0,
+        },
+    };
 
     let tree = behave! {
         Behave::Forever => {
@@ -69,7 +79,7 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
                 Behave::Sequence => {
                    Behave::spawn_named("Is player in attack range", TargetInRange {range: attack_range}),
                    Behave::spawn_named("Is facing player", IsFacingTarget),
-                   Behave::spawn_named("Attack", Attack {duration_secs: 1.5}),
+                   Behave::spawn_named("Attack", attack),
                 },
                 Behave::Sequence => {
                     Behave::spawn_named("Is player in chase range", TargetInRange {range: chase_range}),
