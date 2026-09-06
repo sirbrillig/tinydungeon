@@ -147,7 +147,7 @@ fn on_enemy_spawned(event: On<Add, Enemy>, mut commands: Commands) {
             HitBox,
             CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
             // @todo match this to the sprite or make it set per enemy
-            Collider::rectangle(16., ENEMY_HEIGHT),
+            Collider::rectangle(10., 10.),
         ));
     });
 }

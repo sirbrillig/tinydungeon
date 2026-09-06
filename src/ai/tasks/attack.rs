@@ -74,15 +74,15 @@ fn add_hitbox(
     commands: &mut Commands,
 ) {
     let offset_x = match facing {
-        FacingDirection::Left => -12.0,
-        FacingDirection::Right => 12.0,
+        FacingDirection::Left => -18.0,
+        FacingDirection::Right => 18.0,
     };
     let hitbox = commands
         .spawn((
             HitBox,
             CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
             // @todo let attack collider size and position be configurable by attack
-            Collider::rectangle(16., 14.0),
+            Collider::rectangle(16.0, 22.0),
             Transform::from_xyz(offset_x, 0.0, 0.0),
             ChildOf(enemy),
         ))

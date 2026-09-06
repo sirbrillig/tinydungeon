@@ -119,7 +119,8 @@ fn on_player_spawned(
         parent.spawn((
             HurtBox,
             CollisionLayers::new(GameLayers::PlayerHurtBox, [GameLayers::EnemyHitBox]),
-            Collider::rectangle(16., PLAYER_HEIGHT),
+            Collider::rectangle(10., 14.),
+            Transform::from_xyz(0.0, -4.0, 0.0),
             CollidingEntities::default(),
         ));
     });

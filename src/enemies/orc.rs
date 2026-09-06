@@ -60,19 +60,21 @@ struct OrcAnimations(AnimationSet);
 
 fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAnimations>) {
     commands.entity(event.entity).insert(animations.0.clone());
+    let attack_range = 700.0;
+    let chase_range = 5000.0;
 
     let tree = behave! {
         Behave::Forever => {
             Behave::Fallback => {
                 Behave::Sequence => {
-                   Behave::spawn_named("Is player in attack range", TargetInRange {range: 600.0}),
+                   Behave::spawn_named("Is player in attack range", TargetInRange {range: attack_range}),
                    Behave::spawn_named("Is facing player", IsFacingTarget),
-                   Behave::spawn_named("Attack", Attack {duration_secs: 1.0}),
+                   Behave::spawn_named("Attack", Attack {duration_secs: 1.5}),
                 },
                 Behave::Sequence => {
-                    Behave::spawn_named("Is player in chase range", TargetInRange {range: 3500.0}),
+                    Behave::spawn_named("Is player in chase range", TargetInRange {range: chase_range}),
                     Behave::spawn_named("Face player", FaceTarget),
-                    Behave::spawn_named("Move toward player", MoveTowardEntity {near_distance: 600.0, far_distance: 3500.0}),
+                    Behave::spawn_named("Move toward player", MoveTowardEntity {near_distance: attack_range, far_distance: chase_range}),
                 },
                 Behave::spawn_named("Is player in at least chase range", WaitUntilPlayerIsNear),
             }
