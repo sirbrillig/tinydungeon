@@ -2,6 +2,7 @@ use crate::{
     GameSet,
     attack::Attacking,
     movement::{FacingDirection, MovementState},
+    player::Knockback,
 };
 use avian2d::dynamics::rigid_body::LinearVelocity;
 use bevy::prelude::*;
@@ -124,8 +125,13 @@ fn update_sprites(
     }
 }
 
-fn determine_facing(mut query: Query<(&mut FacingDirection, &LinearVelocity), With<Sprite>>) {
-    for (mut facing, vel) in query.iter_mut() {
+fn determine_facing(
+    mut query: Query<(&mut FacingDirection, &LinearVelocity, Has<Knockback>), With<Sprite>>,
+) {
+    for (mut facing, vel, has_knockback) in query.iter_mut() {
+        if has_knockback {
+            continue;
+        }
         let is_walking = vel.x.abs() > 0.1;
         if !is_walking {
             continue;

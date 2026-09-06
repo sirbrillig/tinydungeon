@@ -27,6 +27,7 @@ pub enum GameSet {
     Input,
     PostInput,
     Animate,
+    Reactions,
 }
 
 pub struct GamePlugin;
@@ -57,7 +58,13 @@ impl Plugin for GamePlugin {
         app.insert_resource(LevelSelection::index(0));
         app.configure_sets(
             Update,
-            (GameSet::Input, GameSet::PostInput, GameSet::Animate).chain(),
+            (
+                GameSet::Input,
+                GameSet::PostInput,
+                GameSet::Animate,
+                GameSet::Reactions,
+            )
+                .chain(),
         );
     }
 }

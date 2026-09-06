@@ -1,4 +1,5 @@
 use crate::animation::SpriteAnimation;
+use crate::attack::HitBox;
 use crate::movement::*;
 use crate::player::Player;
 use crate::{ai::tasks::move_toward_entity::ChaseTarget, animation::AnimationKey};
@@ -135,7 +136,20 @@ impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, set_chase_target);
         app.add_plugins(orc::plugin);
+        app.add_observer(on_enemy_spawned);
     }
+}
+
+fn on_enemy_spawned(event: On<Add, Enemy>, mut commands: Commands) {
+    // Add hit box in a child (which we cannot do during init because ldtk plugin does not support it)
+    commands.entity(event.entity).with_children(|parent| {
+        parent.spawn((
+            HitBox,
+            CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
+            // @todo match this to the sprite or make it set per enemy
+            Collider::rectangle(16., ENEMY_HEIGHT),
+        ));
+    });
 }
 
 fn set_chase_target(

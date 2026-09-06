@@ -80,7 +80,7 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
     };
     commands.spawn((
         Name::new("Orc"),
-        BehaveTree::new(tree).with_logging(true),
+        BehaveTree::new(tree),
         ChildOf(event.entity),
     ));
 }

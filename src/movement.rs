@@ -23,7 +23,9 @@ pub enum GameLayers {
     #[default]
     Environment,
     Player,
+    PlayerHurtBox,
     Enemies,
+    EnemyHitBox,
 }
 
 #[derive(Component)]
