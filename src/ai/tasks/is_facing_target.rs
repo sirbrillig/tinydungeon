@@ -3,7 +3,10 @@ use bevy::prelude::*;
 use bevy_behave::prelude::*;
 
 use crate::{
-    ai::{AiSet, tasks::move_toward_entity::ChaseTarget},
+    ai::{
+        AiSet,
+        tasks::{TaskReported, move_toward_entity::ChaseTarget},
+    },
     movement::FacingDirection,
 };
 
@@ -15,12 +18,12 @@ pub fn plugin(app: &mut App) {
 }
 
 fn action(
-    query: Query<&BehaveCtx, With<IsFacingTarget>>,
+    query: Query<(Entity, &BehaveCtx), (With<IsFacingTarget>, Without<TaskReported>)>,
     mut commands: Commands,
     entities: Query<&Position>,
     mover_props: Query<(&ChaseTarget, &Position, &FacingDirection)>,
 ) {
-    for ctx in query.iter() {
+    for (task, ctx) in query.iter() {
         let Ok((target, mover_pos, facing)) = mover_props.get(ctx.target_entity()) else {
             continue;
         };
@@ -39,5 +42,6 @@ fn action(
         } else {
             commands.trigger(ctx.failure());
         }
+        commands.entity(task).insert(TaskReported);
     }
 }

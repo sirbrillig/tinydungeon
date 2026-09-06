@@ -2,7 +2,10 @@ use avian2d::physics_transform::Position;
 use bevy::prelude::*;
 use bevy_behave::prelude::*;
 
-use crate::{ai::AiSet, player::Player};
+use crate::{
+    ai::{AiSet, tasks::TaskReported},
+    player::Player,
+};
 
 #[derive(Component, Clone, Copy)]
 pub struct WaitUntilPlayerIsNear;
@@ -15,13 +18,13 @@ pub fn plugin(app: &mut App) {
 }
 
 fn wait_for_player(
-    query: Query<&BehaveCtx, With<WaitUntilPlayerIsNear>>,
+    query: Query<(Entity, &BehaveCtx), (With<WaitUntilPlayerIsNear>, Without<TaskReported>)>,
     mut commands: Commands,
     player_pos: Single<&Position, With<Player>>,
     entities: Query<&Position>,
     mover_props: Query<&DetectionDistance>,
 ) {
-    for ctx in query.iter() {
+    for (task, ctx) in query.iter() {
         let Ok(enemy_pos) = entities.get(ctx.target_entity()) else {
             continue;
         };
@@ -31,6 +34,7 @@ fn wait_for_player(
         let distance_to_player = player_pos.distance_squared(enemy_pos.0);
         if distance_to_player <= near_distance.0 {
             commands.trigger(ctx.success());
+            commands.entity(task).insert(TaskReported);
         }
     }
 }

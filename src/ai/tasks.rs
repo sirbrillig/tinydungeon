@@ -1,4 +1,4 @@
-use bevy::app::App;
+use bevy::{app::App, ecs::component::Component};
 
 pub mod attack;
 pub mod face_target;
@@ -7,6 +7,10 @@ pub mod move_toward_entity;
 pub mod stop_moving;
 pub mod target_in_range;
 pub mod wait_until_player_is_near;
+
+/// Attach this to a task entity that runs on Update when it is complete to avoid double completing
+#[derive(Component)]
+pub struct TaskReported;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((

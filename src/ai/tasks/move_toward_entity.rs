@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_behave::prelude::*;
 
 use crate::{
-    ai::AiSet,
+    ai::{AiSet, tasks::TaskReported},
     movement::{FacingDirection, IntendedXVelocity, MovementSpeed},
 };
 
@@ -21,12 +21,12 @@ pub fn plugin(app: &mut App) {
 }
 
 fn move_toward_entity(
-    query: Query<(&MoveTowardEntity, &BehaveCtx)>,
+    query: Query<(Entity, &MoveTowardEntity, &BehaveCtx), Without<TaskReported>>,
     mut commands: Commands,
     entities: Query<&Position>,
     mover_props: Query<(&ChaseTarget, &MovementSpeed, &Position)>,
 ) {
-    for (distance, ctx) in query.iter() {
+    for (task, distance, ctx) in query.iter() {
         let Ok((target, speed, mover_pos)) = mover_props.get(ctx.target_entity()) else {
             continue;
         };
@@ -46,12 +46,14 @@ fn move_toward_entity(
                 .entity(ctx.target_entity())
                 .insert(IntendedXVelocity(0.0));
             commands.trigger(ctx.success());
+            commands.entity(task).insert(TaskReported);
         } else if distance_to_player >= distance.far_distance {
             // Stop if we get too far
             commands
                 .entity(ctx.target_entity())
                 .insert(IntendedXVelocity(0.0));
             commands.trigger(ctx.success());
+            commands.entity(task).insert(TaskReported);
         } else {
             // Otherwise move toward target
             commands
