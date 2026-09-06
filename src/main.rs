@@ -49,7 +49,7 @@ impl Plugin for GamePlugin {
             ai::plugin,
         ));
         app.insert_gizmo_config(
-            PhysicsGizmos::default(),
+            PhysicsGizmos::default().without_axes(),
             GizmoConfig {
                 enabled: false,
                 ..default()
