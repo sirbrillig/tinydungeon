@@ -5,7 +5,7 @@ use bevy::{ecs::component::Component, time::Timer};
 #[derive(Component)]
 pub struct Attacking {
     pub timer: Timer,
-    pub hitbox: Entity,
+    pub hitbox: Option<Entity>,
 }
 
 #[derive(Component)]
