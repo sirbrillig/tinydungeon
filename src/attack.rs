@@ -1,9 +1,11 @@
 use avian2d::collision::{collider::Sensor, collision_events::CollisionEventsEnabled};
+use bevy::prelude::*;
 use bevy::{ecs::component::Component, time::Timer};
 
 #[derive(Component)]
 pub struct Attacking {
     pub timer: Timer,
+    pub hitbox: Entity,
 }
 
 #[derive(Component)]
