@@ -2,8 +2,8 @@ use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
 use crate::attack::HurtBox;
 use crate::movement::*;
 use crate::{GameSet, animation::SpriteAnimation};
-use avian2d::collision::collider::CollisionLayers;
-use avian2d::collision::collision_events::CollisionStart;
+use avian2d::collision::collider::collider_hierarchy::ColliderOf;
+use avian2d::collision::collider::{CollidingEntities, CollisionLayers};
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{Friction, LinearVelocity, LockedAxes, RigidBody},
@@ -97,7 +97,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(
             Update,
-            (handle_got_hit, handle_hurt, handle_invincible)
+            (detect_hit, handle_got_hit, handle_hurt, handle_invincible)
                 .chain()
                 .in_set(GameSet::Reactions),
         );
@@ -116,13 +116,12 @@ fn on_player_spawned(
 
     // Add hurt box in a child (which we cannot do during init because ldtk plugin does not support it)
     commands.entity(event.entity).with_children(|parent| {
-        parent
-            .spawn((
-                HurtBox,
-                CollisionLayers::new(GameLayers::PlayerHurtBox, [GameLayers::EnemyHitBox]),
-                Collider::rectangle(16., PLAYER_HEIGHT),
-            ))
-            .observe(on_hit);
+        parent.spawn((
+            HurtBox,
+            CollisionLayers::new(GameLayers::PlayerHurtBox, [GameLayers::EnemyHitBox]),
+            Collider::rectangle(16., PLAYER_HEIGHT),
+            CollidingEntities::default(),
+        ));
     });
 }
 
@@ -141,15 +140,21 @@ pub struct Invincible {
     pub timer: Timer,
 }
 
-fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
-    // @todo support collide if player already inside enemy hurtbox
-    let Some(player) = event.body1 else {
-        return;
-    };
-    let Some(enemy) = event.body2 else {
-        return;
-    };
-    commands.entity(player).insert(GotHit { hit_by: enemy });
+fn detect_hit(
+    query: Query<&CollidingEntities>,
+    player: Single<Entity, With<Player>>,
+    hitters: Query<&ColliderOf>,
+    mut commands: Commands,
+) {
+    for collider_bodies in query.iter() {
+        for hitbox in collider_bodies.iter() {
+            let Ok(hitbox_collider) = hitters.get(*hitbox) else {
+                continue;
+            };
+            let enemy = hitbox_collider.body;
+            commands.entity(*player).insert(GotHit { hit_by: enemy });
+        }
+    }
 }
 
 fn handle_got_hit(
