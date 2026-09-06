@@ -95,7 +95,10 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
         app.add_systems(Update, move_player.in_set(GameSet::Input));
-        app.add_systems(Update, handle_hurt.in_set(GameSet::Reactions));
+        app.add_systems(
+            Update,
+            (handle_hurt, handle_invincible).in_set(GameSet::Reactions),
+        );
         app.register_ldtk_entity::<PlayerBundle>("Player");
         app.add_observer(on_player_spawned);
     }
@@ -126,6 +129,11 @@ pub struct HurtState {
     pub timer: Timer,
 }
 
+#[derive(Component)]
+pub struct Invincible {
+    pub timer: Timer,
+}
+
 fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
     let Some(player) = event.body1 else {
         return;
@@ -133,12 +141,18 @@ fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
     let Some(enemy) = event.body2 else {
         return;
     };
+    // Add HurtState to visually show the player get hurt
     commands.entity(player).insert(HurtState {
         timer: Timer::from_seconds(0.1, TimerMode::Once),
     });
+    // Add Knockback to knock the player back
     commands.entity(player).insert(Knockback {
         timer: Timer::from_seconds(0.1, TimerMode::Once),
         collided_with: enemy,
+    });
+    // Make player invincible briefly
+    commands.entity(player).insert(Invincible {
+        timer: Timer::from_seconds(0.8, TimerMode::Once),
     });
 }
 
@@ -160,6 +174,20 @@ fn handle_hurt(
     }
 }
 
+fn handle_invincible(
+    mut query: Query<(&mut Invincible, Entity)>,
+    mut commands: Commands,
+    time: Res<Time>,
+) {
+    for (mut invincible, entity) in query.iter_mut() {
+        if invincible.timer.is_finished() {
+            commands.entity(entity).remove::<Invincible>();
+            continue;
+        }
+        invincible.timer.tick(time.delta());
+    }
+}
+
 fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
     if keyboard_input.pressed(KeyCode::ArrowRight) {
         1.0
@@ -170,11 +198,12 @@ fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
     }
 }
 
-type MovablePlayer = (With<Player>, Without<CannotMove>);
-
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player: Single<(&mut LinearVelocity, &MovementSpeed, &mut CoyoteTimer), MovablePlayer>,
+    player: Single<
+        (&mut LinearVelocity, &MovementSpeed, &mut CoyoteTimer),
+        (With<Player>, Without<CannotMove>),
+    >,
 ) {
     let (mut vel, speed, mut coyote) = player.into_inner();
     vel.x = get_change_for_input(&keyboard_input) * speed.0;
