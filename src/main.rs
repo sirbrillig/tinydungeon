@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 mod ai;
 mod animation;
 mod attack;
