@@ -97,7 +97,9 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, move_player.in_set(GameSet::Input));
         app.add_systems(
             Update,
-            (handle_hurt, handle_invincible).in_set(GameSet::Reactions),
+            (handle_got_hit, handle_hurt, handle_invincible)
+                .chain()
+                .in_set(GameSet::Reactions),
         );
         app.register_ldtk_entity::<PlayerBundle>("Player");
         app.add_observer(on_player_spawned);
@@ -125,6 +127,11 @@ fn on_player_spawned(
 }
 
 #[derive(Component)]
+pub struct GotHit {
+    hit_by: Entity,
+}
+
+#[derive(Component)]
 pub struct HurtState {
     pub timer: Timer,
 }
@@ -141,19 +148,32 @@ fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
     let Some(enemy) = event.body2 else {
         return;
     };
-    // Add HurtState to visually show the player get hurt
-    commands.entity(player).insert(HurtState {
-        timer: Timer::from_seconds(0.1, TimerMode::Once),
-    });
-    // Add Knockback to knock the player back
-    commands.entity(player).insert(Knockback {
-        timer: Timer::from_seconds(0.1, TimerMode::Once),
-        collided_with: enemy,
-    });
-    // Make player invincible briefly
-    commands.entity(player).insert(Invincible {
-        timer: Timer::from_seconds(0.8, TimerMode::Once),
-    });
+    commands.entity(player).insert(GotHit { hit_by: enemy });
+}
+
+fn handle_got_hit(
+    query: Query<(Entity, &GotHit, Has<Invincible>), Added<GotHit>>,
+    mut commands: Commands,
+) {
+    for (player, hit, invincible) in query.iter() {
+        commands.entity(player).remove::<GotHit>();
+        if invincible {
+            continue;
+        }
+        // Add HurtState to visually show the player get hurt
+        commands.entity(player).insert(HurtState {
+            timer: Timer::from_seconds(0.1, TimerMode::Once),
+        });
+        // Add Knockback to knock the player back
+        commands.entity(player).insert(Knockback {
+            timer: Timer::from_seconds(0.1, TimerMode::Once),
+            collided_with: hit.hit_by,
+        });
+        // Make player invincible briefly
+        commands.entity(player).insert(Invincible {
+            timer: Timer::from_seconds(0.8, TimerMode::Once),
+        });
+    }
 }
 
 fn handle_hurt(
@@ -161,30 +181,36 @@ fn handle_hurt(
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    for (mut sprite, mut hurt, entity) in query.iter_mut() {
+    for (mut _sprite, mut hurt, entity) in query.iter_mut() {
         if hurt.timer.is_finished() {
-            // Reset the sprite color
-            sprite.color = Color::WHITE;
             commands.entity(entity).remove::<HurtState>();
             continue;
         }
         hurt.timer.tick(time.delta());
         // @todo play a hurt animation (time it to the hurt timer using AnimationProgress)
-        sprite.color = Color::srgb(1.0, 0.35, 0.35);
     }
 }
 
 fn handle_invincible(
-    mut query: Query<(&mut Invincible, Entity)>,
+    mut query: Query<(&mut Sprite, &mut Invincible, Entity)>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    for (mut invincible, entity) in query.iter_mut() {
+    for (mut sprite, mut invincible, entity) in query.iter_mut() {
         if invincible.timer.is_finished() {
+            sprite.color.set_alpha(1.0);
             commands.entity(entity).remove::<Invincible>();
             continue;
         }
         invincible.timer.tick(time.delta());
+        let elapsed = invincible.timer.elapsed().as_secs();
+        let flicker_hz = 15;
+        let alpha = if (elapsed * flicker_hz) % 2 == 0 {
+            0.3
+        } else {
+            1.0
+        };
+        sprite.color.set_alpha(alpha);
     }
 }
 
