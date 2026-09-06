@@ -142,6 +142,7 @@ pub struct Invincible {
 }
 
 fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
+    // @todo support collide if player already inside enemy hurtbox
     let Some(player) = event.body1 else {
         return;
     };
@@ -203,9 +204,9 @@ fn handle_invincible(
             continue;
         }
         invincible.timer.tick(time.delta());
-        let elapsed = invincible.timer.elapsed().as_secs();
-        let flicker_hz = 15;
-        let alpha = if (elapsed * flicker_hz) % 2 == 0 {
+        let elapsed = invincible.timer.elapsed_secs();
+        let flicker_hz = 15.0;
+        let alpha = if ((elapsed * flicker_hz) as u32).is_multiple_of(2) {
             0.3
         } else {
             1.0
