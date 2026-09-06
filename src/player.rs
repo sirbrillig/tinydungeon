@@ -95,7 +95,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
         app.add_systems(Update, move_player.in_set(GameSet::Input));
-        app.add_systems(Update, (handle_hurt).in_set(GameSet::Reactions));
+        app.add_systems(Update, handle_hurt.in_set(GameSet::Reactions));
         app.register_ldtk_entity::<PlayerBundle>("Player");
         app.add_observer(on_player_spawned);
     }

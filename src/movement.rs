@@ -12,7 +12,12 @@ impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (ground_detection, coyote_timer, set_intended_velocity)
+            (
+                determine_cannot_move,
+                ground_detection,
+                coyote_timer,
+                set_intended_velocity,
+            )
                 .chain()
                 .before(GameSet::Input),
         );
@@ -44,7 +49,6 @@ pub struct MovementSpeed(pub f32);
 pub struct IntendedXVelocity(pub f32);
 
 #[derive(Component)]
-#[require(CannotMove)]
 pub struct Knockback {
     pub timer: Timer,
 }
@@ -104,7 +108,7 @@ fn handle_knockback(
     for (mut vel, mut knock, facing, entity) in query.iter_mut() {
         if knock.timer.is_finished() {
             vel.x = 0.0;
-            commands.entity(entity).remove::<(Knockback, CannotMove)>();
+            commands.entity(entity).remove::<Knockback>();
             continue;
         }
         knock.timer.tick(time.delta());
@@ -128,6 +132,24 @@ fn determine_movement_state(
         };
         if *state != next_state {
             *state = next_state;
+        }
+    }
+}
+
+fn determine_cannot_move(
+    mut commands: Commands,
+    query: Query<(Entity, Has<Knockback>, Has<CannotMove>), Or<(With<Knockback>, With<CannotMove>)>>,
+) {
+    for (entity, is_knockback, cannot_move) in query.iter() {
+        // @note this array is here so it can be expanded later for other states
+        let next_cannot_move = [is_knockback].iter().any(|&x| x);
+        if next_cannot_move == cannot_move {
+            continue;
+        }
+        if next_cannot_move {
+            commands.entity(entity).insert(CannotMove);
+        } else {
+            commands.entity(entity).remove::<CannotMove>();
         }
     }
 }
