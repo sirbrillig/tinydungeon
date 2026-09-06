@@ -130,11 +130,15 @@ fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
     let Some(player) = event.body1 else {
         return;
     };
+    let Some(enemy) = event.body2 else {
+        return;
+    };
     commands.entity(player).insert(HurtState {
-        timer: Timer::from_seconds(0.13, TimerMode::Once),
+        timer: Timer::from_seconds(0.1, TimerMode::Once),
     });
     commands.entity(player).insert(Knockback {
-        timer: Timer::from_seconds(0.13, TimerMode::Once),
+        timer: Timer::from_seconds(0.1, TimerMode::Once),
+        collided_with: enemy,
     });
 }
 

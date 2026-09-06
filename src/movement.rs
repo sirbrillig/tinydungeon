@@ -6,7 +6,8 @@ use bevy::prelude::*;
 
 pub struct MovementPlugin;
 
-const KNOCKBACK_SPEED: f32 = 300.0;
+const KNOCKBACK_SPEED_X: f32 = 290.0;
+const KNOCKBACK_SPEED_Y: f32 = 110.0;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
@@ -51,6 +52,7 @@ pub struct IntendedXVelocity(pub f32);
 #[derive(Component)]
 pub struct Knockback {
     pub timer: Timer,
+    pub collided_with: Entity,
 }
 
 #[derive(Component, Default)]
@@ -96,27 +98,26 @@ impl CoyoteTimer {
 }
 
 fn handle_knockback(
-    mut query: Query<(
-        &mut LinearVelocity,
-        &mut Knockback,
-        &FacingDirection,
-        Entity,
-    )>,
+    mut query: Query<(&mut LinearVelocity, &mut Knockback, &Transform, Entity)>,
+    colliders: Query<&Transform, With<LinearVelocity>>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    for (mut vel, mut knock, facing, entity) in query.iter_mut() {
+    for (mut vel, mut knock, player_transform, entity) in query.iter_mut() {
         if knock.timer.is_finished() {
             vel.x = 0.0;
             commands.entity(entity).remove::<Knockback>();
             continue;
         }
         knock.timer.tick(time.delta());
-        // @todo make the direction invert the player's current x and y velocity, if any
-        vel.x = match facing {
-            FacingDirection::Left => KNOCKBACK_SPEED,
-            FacingDirection::Right => -KNOCKBACK_SPEED,
+
+        let Ok(enemy_transform) = colliders.get(knock.collided_with) else {
+            continue;
         };
+        // Calculate horizontal sign (-1.0 for Left, 1.0 for Right)
+        let direction_x = (player_transform.translation.x - enemy_transform.translation.x).signum();
+        vel.x = direction_x * KNOCKBACK_SPEED_X;
+        vel.y = KNOCKBACK_SPEED_Y; // Small upward pop
     }
 }
 
@@ -138,7 +139,10 @@ fn determine_movement_state(
 
 fn determine_cannot_move(
     mut commands: Commands,
-    query: Query<(Entity, Has<Knockback>, Has<CannotMove>), Or<(With<Knockback>, With<CannotMove>)>>,
+    query: Query<
+        (Entity, Has<Knockback>, Has<CannotMove>),
+        Or<(With<Knockback>, With<CannotMove>)>,
+    >,
 ) {
     for (entity, is_knockback, cannot_move) in query.iter() {
         // @note this array is here so it can be expanded later for other states
