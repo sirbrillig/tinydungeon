@@ -6,6 +6,8 @@ use bevy::prelude::*;
 
 pub struct MovementPlugin;
 
+const KNOCKBACK_SPEED: f32 = 300.0;
+
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
@@ -15,6 +17,7 @@ impl Plugin for MovementPlugin {
                 .before(GameSet::Input),
         );
         app.add_systems(Update, determine_movement_state.in_set(GameSet::PostInput));
+        app.add_systems(Update, handle_knockback.in_set(GameSet::Reactions));
     }
 }
 
@@ -39,6 +42,15 @@ pub struct MovementSpeed(pub f32);
 
 #[derive(Component, Copy, Clone)]
 pub struct IntendedXVelocity(pub f32);
+
+#[derive(Component)]
+#[require(CannotMove)]
+pub struct Knockback {
+    pub timer: Timer,
+}
+
+#[derive(Component, Default)]
+pub struct CannotMove;
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Debug, Default, Hash)]
 pub enum MovementState {
@@ -76,6 +88,31 @@ impl CoyoteTimer {
 
     pub fn can_jump(&self) -> bool {
         !self.timer.is_finished()
+    }
+}
+
+fn handle_knockback(
+    mut query: Query<(
+        &mut LinearVelocity,
+        &mut Knockback,
+        &FacingDirection,
+        Entity,
+    )>,
+    mut commands: Commands,
+    time: Res<Time>,
+) {
+    for (mut vel, mut knock, facing, entity) in query.iter_mut() {
+        if knock.timer.is_finished() {
+            vel.x = 0.0;
+            commands.entity(entity).remove::<(Knockback, CannotMove)>();
+            continue;
+        }
+        knock.timer.tick(time.delta());
+        // @todo make the direction invert the player's current x and y velocity, if any
+        vel.x = match facing {
+            FacingDirection::Left => KNOCKBACK_SPEED,
+            FacingDirection::Right => -KNOCKBACK_SPEED,
+        };
     }
 }
 

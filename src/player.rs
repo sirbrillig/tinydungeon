@@ -20,7 +20,6 @@ const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
 const PLAYER_FOOT_HEIGHT: f32 = 2.0;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
-const KNOCKBACK_SPEED: f32 = 300.0;
 
 #[derive(Resource)]
 pub struct PlayerAnimations(AnimationSet);
@@ -96,10 +95,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_player);
         app.add_systems(Update, move_player.in_set(GameSet::Input));
-        app.add_systems(
-            Update,
-            (handle_hurt, handle_knockback).in_set(GameSet::Reactions),
-        );
+        app.add_systems(Update, (handle_hurt).in_set(GameSet::Reactions));
         app.register_ldtk_entity::<PlayerBundle>("Player");
         app.add_observer(on_player_spawned);
     }
@@ -130,12 +126,6 @@ pub struct HurtState {
     pub timer: Timer,
 }
 
-// @todo move this to movement probably along with system and constant
-#[derive(Component)]
-pub struct Knockback {
-    timer: Timer,
-}
-
 fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
     let Some(player) = event.body1 else {
         return;
@@ -143,7 +133,6 @@ fn on_hit(event: On<CollisionStart>, mut commands: Commands) {
     commands.entity(player).insert(HurtState {
         timer: Timer::from_seconds(0.13, TimerMode::Once),
     });
-    // @todo start a timer to remove this state and have it move the player
     commands.entity(player).insert(Knockback {
         timer: Timer::from_seconds(0.13, TimerMode::Once),
     });
@@ -167,31 +156,6 @@ fn handle_hurt(
     }
 }
 
-fn handle_knockback(
-    mut query: Query<(
-        &mut LinearVelocity,
-        &mut Knockback,
-        &FacingDirection,
-        Entity,
-    )>,
-    mut commands: Commands,
-    time: Res<Time>,
-) {
-    for (mut vel, mut knock, facing, entity) in query.iter_mut() {
-        if knock.timer.is_finished() {
-            vel.x = 0.0;
-            commands.entity(entity).remove::<Knockback>();
-            continue;
-        }
-        knock.timer.tick(time.delta());
-        // @todo make the direction invert the player's current x and y velocity, if any
-        vel.x = match facing {
-            FacingDirection::Left => KNOCKBACK_SPEED,
-            FacingDirection::Right => -KNOCKBACK_SPEED,
-        };
-    }
-}
-
 fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
     if keyboard_input.pressed(KeyCode::ArrowRight) {
         1.0
@@ -202,22 +166,13 @@ fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
     }
 }
 
+type MovablePlayer = (With<Player>, Without<CannotMove>);
+
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player: Single<
-        (
-            &mut LinearVelocity,
-            &MovementSpeed,
-            &mut CoyoteTimer,
-            Has<HurtState>,
-        ),
-        With<Player>,
-    >,
+    player: Single<(&mut LinearVelocity, &MovementSpeed, &mut CoyoteTimer), MovablePlayer>,
 ) {
-    let (mut vel, speed, mut coyote, is_hurt) = player.into_inner();
-    if is_hurt {
-        return;
-    }
+    let (mut vel, speed, mut coyote) = player.into_inner();
     vel.x = get_change_for_input(&keyboard_input) * speed.0;
     if keyboard_input.just_released(KeyCode::ArrowUp) && vel.0.y > 0.0 {
         vel.0.y = vel.0.y.min(PLAYER_JUMP_CUT_SPEED);

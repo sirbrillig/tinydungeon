@@ -1,8 +1,7 @@
 use crate::{
     GameSet,
     attack::Attacking,
-    movement::{FacingDirection, MovementState},
-    player::Knockback,
+    movement::{FacingDirection, Knockback, MovementState},
 };
 use avian2d::dynamics::rigid_body::LinearVelocity;
 use bevy::prelude::*;
