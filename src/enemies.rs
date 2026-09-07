@@ -23,6 +23,12 @@ const ENEMY_FOOT_RANGE: f32 = 2.0;
 #[derive(Component, Default)]
 pub struct Enemy;
 
+#[derive(Component)]
+pub struct HurtsWhenTouched {
+    width: f32,
+    height: f32,
+}
+
 #[derive(Bundle, LdtkEntity)]
 pub struct EnemyCoreBundle {
     enemy: Enemy,
@@ -140,16 +146,21 @@ impl Plugin for EnemyPlugin {
     }
 }
 
-fn on_enemy_spawned(event: On<Add, Enemy>, mut commands: Commands) {
-    // Add hit box in a child (which we cannot do during init because ldtk plugin does not support it)
-    commands.entity(event.entity).with_children(|parent| {
-        parent.spawn((
-            HitBox,
-            CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
-            // @todo match this to the sprite or make it set per enemy
-            Collider::rectangle(10., 10.),
-        ));
-    });
+fn on_enemy_spawned(
+    event: On<Add, Enemy>,
+    hurters: Query<&HurtsWhenTouched>,
+    mut commands: Commands,
+) {
+    if let Ok(hurts) = hurters.get(event.entity) {
+        // Add hit box in a child (which we cannot do during init because ldtk plugin does not support it)
+        commands.entity(event.entity).with_children(|parent| {
+            parent.spawn((
+                HitBox,
+                CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
+                Collider::rectangle(hurts.width, hurts.height),
+            ));
+        });
+    }
 }
 
 fn set_chase_target(

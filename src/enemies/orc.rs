@@ -5,7 +5,7 @@ use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
 use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
 use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
-use crate::enemies::{EnemyCoreBundle, EnemySettings};
+use crate::enemies::{EnemyCoreBundle, EnemySettings, HurtsWhenTouched};
 use bevy::prelude::*;
 use bevy_behave::behave;
 use bevy_behave::prelude::*;
@@ -28,6 +28,7 @@ struct OrcBundle {
     sprite_sheet: Sprite,
     core: EnemyCoreBundle,
     detection_distance: DetectionDistance,
+    hurts: HurtsWhenTouched,
 }
 
 impl Default for OrcBundle {
@@ -45,6 +46,10 @@ impl Default for OrcBundle {
                 ground_detector_range: ENEMY_FOOT_RANGE,
                 animation_default_frames: 6,
             }),
+            hurts: HurtsWhenTouched {
+                width: 10.0,
+                height: 10.0,
+            },
         }
     }
 }
