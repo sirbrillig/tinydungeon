@@ -1,6 +1,7 @@
 use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
 use crate::attack::HurtBox;
 use crate::movement::*;
+use crate::powers::ActivateBell;
 use crate::{GameSet, animation::SpriteAnimation};
 use avian2d::collision::collider::collider_hierarchy::ColliderOf;
 use avian2d::collision::collider::{CollidingEntities, CollisionLayers};
@@ -234,11 +235,22 @@ fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     player: Single<
-        (&mut LinearVelocity, &MovementSpeed, &mut CoyoteTimer),
+        (
+            Entity,
+            &mut LinearVelocity,
+            &MovementSpeed,
+            &mut CoyoteTimer,
+        ),
         (With<Player>, Without<CannotMove>),
     >,
+    mut commands: Commands,
 ) {
-    let (mut vel, speed, mut coyote) = player.into_inner();
+    let (entity, mut vel, speed, mut coyote) = player.into_inner();
+
+    if keyboard_input.just_pressed(KeyCode::KeyZ) {
+        commands.entity(entity).insert(ActivateBell);
+    }
+
     vel.x = get_change_for_input(&keyboard_input) * speed.0;
     if keyboard_input.just_released(KeyCode::ArrowUp) && vel.0.y > 0.0 {
         vel.0.y = vel.0.y.min(PLAYER_JUMP_CUT_SPEED);

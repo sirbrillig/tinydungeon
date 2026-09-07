@@ -28,6 +28,7 @@ pub enum AnimationKey {
     Walking,
     Jumping,
     Attacking,
+    Repulsion,
 }
 
 #[derive(Component)]

@@ -6,6 +6,7 @@ mod debug;
 mod enemies;
 mod movement;
 mod player;
+mod powers;
 mod wall;
 
 use animation::AnimationPlugin;
@@ -21,12 +22,14 @@ use debug::DebugPlugin;
 use enemies::EnemyPlugin;
 use movement::MovementPlugin;
 use player::PlayerPlugin;
+use powers::powers_plugin;
 use wall::WallPlugin;
 
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
 pub enum GameSet {
     Input,
     PostInput,
+    Powers,
     Animate,
     Reactions,
 }
@@ -47,6 +50,7 @@ impl Plugin for GamePlugin {
             PhysicsPlugins::default().with_length_unit(50.0),
             DebugPlugin,
             ai::plugin,
+            powers_plugin,
         ));
         app.insert_gizmo_config(
             PhysicsGizmos::default().without_axes(),
@@ -62,6 +66,7 @@ impl Plugin for GamePlugin {
             (
                 GameSet::Input,
                 GameSet::PostInput,
+                GameSet::Powers,
                 GameSet::Animate,
                 GameSet::Reactions,
             )
