@@ -1,5 +1,5 @@
 use crate::animation::SpriteAnimation;
-use crate::attack::HitBox;
+use crate::attack::HitBoxBundle;
 use crate::movement::*;
 use crate::player::Player;
 use crate::{ai::tasks::move_toward_entity::ChaseTarget, animation::AnimationKey};
@@ -154,10 +154,11 @@ fn on_enemy_spawned(
     if let Ok(hurts) = hurters.get(event.entity) {
         // Add hit box in a child (which we cannot do during init because ldtk plugin does not support it)
         commands.entity(event.entity).with_children(|parent| {
-            parent.spawn((
-                HitBox,
-                CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
-                Collider::rectangle(hurts.width, hurts.height),
+            parent.spawn(HitBoxBundle::new(
+                GameLayers::EnemyHitBox,
+                GameLayers::PlayerHurtBox,
+                hurts.width,
+                hurts.height,
             ));
         });
     }

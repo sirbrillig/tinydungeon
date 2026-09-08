@@ -1,4 +1,3 @@
-use avian2d::collision::collider::{Collider, CollisionLayers};
 use bevy::prelude::*;
 use bevy_behave::prelude::*;
 use std::range::Range;
@@ -6,7 +5,7 @@ use std::range::Range;
 use crate::{
     ai::AiSet,
     animation::{AnimationProgress, SpriteAnimation},
-    attack::{Attacking, HitBox},
+    attack::{Attacking, HitBoxBundle},
     enemies::Enemy,
     movement::{FacingDirection, GameLayers},
 };
@@ -99,9 +98,12 @@ fn add_hitbox(
     };
     let hitbox = commands
         .spawn((
-            HitBox,
-            CollisionLayers::new(GameLayers::EnemyHitBox, [GameLayers::PlayerHurtBox]),
-            Collider::rectangle(attack.hitbox.width, attack.hitbox.height),
+            HitBoxBundle::new(
+                GameLayers::EnemyHitBox,
+                GameLayers::PlayerHurtBox,
+                attack.hitbox.width,
+                attack.hitbox.height,
+            ),
             Transform::from_xyz(offset_x, attack.hitbox.offset_y, 0.0),
             ChildOf(enemy),
         ))

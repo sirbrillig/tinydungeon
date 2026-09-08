@@ -1,5 +1,5 @@
 use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
-use crate::attack::HurtBox;
+use crate::attack::HurtBoxBundle;
 use crate::movement::*;
 use crate::powers::ActivateBell;
 use crate::{GameSet, animation::SpriteAnimation};
@@ -118,11 +118,8 @@ fn on_player_spawned(
     // Add hurt box in a child (which we cannot do during init because ldtk plugin does not support it)
     commands.entity(event.entity).with_children(|parent| {
         parent.spawn((
-            HurtBox,
-            CollisionLayers::new(GameLayers::PlayerHurtBox, [GameLayers::EnemyHitBox]),
-            Collider::rectangle(10., 14.),
+            HurtBoxBundle::new(GameLayers::PlayerHurtBox, GameLayers::EnemyHitBox, 10., 14.),
             Transform::from_xyz(0.0, -4.0, 0.0),
-            CollidingEntities::default(),
         ));
     });
 }
