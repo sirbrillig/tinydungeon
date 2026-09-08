@@ -5,9 +5,10 @@ use std::collections::HashMap;
 use crate::{
     GameSet,
     animation::{AnimationKey, AnimationSet, CharacterAnimationClip, SpriteAnimation},
-    attack::{HitBox, HitBoxBundle, HurtBox},
+    attack::{HitBoxBundle, HurtBox},
     enemies::EnemyHurtBox,
-    movement::GameLayers,
+    movement::{GameLayers, Knockback},
+    player::Player,
 };
 
 pub fn powers_plugin(app: &mut App) {
@@ -18,7 +19,12 @@ pub fn powers_plugin(app: &mut App) {
             .chain()
             .in_set(GameSet::Powers),
     );
-    app.add_systems(Update, (detect_hit).chain().in_set(GameSet::Reactions));
+    app.add_systems(
+        Update,
+        (detect_hit, handle_got_hit)
+            .chain()
+            .in_set(GameSet::Reactions),
+    );
 }
 
 // @todo support activating different bells
@@ -82,8 +88,8 @@ fn activate_bell(
             HitBoxBundle::new(
                 GameLayers::PlayerPowerBox,
                 GameLayers::EnemyHurtBox,
-                20.,
-                20.,
+                40.,
+                40.,
             ),
             BellBundle {
                 // The timer for the power itself
@@ -130,5 +136,19 @@ fn detect_hit(
                 commands.entity(enemy).insert(HitByBell);
             }
         }
+    }
+}
+
+fn handle_got_hit(
+    query: Query<Entity, Added<HitByBell>>,
+    player: Single<Entity, With<Player>>,
+    mut commands: Commands,
+) {
+    for enemy in query.iter() {
+        commands.entity(enemy).remove::<HitByBell>();
+        commands.entity(enemy).insert(Knockback {
+            timer: Timer::from_seconds(0.1, TimerMode::Once),
+            collided_with: *player,
+        });
     }
 }
