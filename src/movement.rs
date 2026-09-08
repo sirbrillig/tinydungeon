@@ -35,6 +35,8 @@ pub enum GameLayers {
     PlayerHurtBox,
     Enemies,
     EnemyHitBox,
+    EnemyHurtBox,
+    PlayerPowerBox,
 }
 
 #[derive(Component)]

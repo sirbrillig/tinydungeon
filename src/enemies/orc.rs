@@ -5,7 +5,9 @@ use crate::ai::tasks::move_toward_entity::MoveTowardEntity;
 use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
 use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
+use crate::attack::HurtBoxBundle;
 use crate::enemies::{EnemyCoreBundle, EnemySettings, HurtsWhenTouched};
+use crate::movement::GameLayers;
 use bevy::prelude::*;
 use bevy_behave::behave;
 use bevy_behave::prelude::*;
@@ -65,6 +67,17 @@ struct OrcAnimations(AnimationSet);
 
 fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAnimations>) {
     commands.entity(event.entity).insert(animations.0.clone());
+
+    // Add hurt box in a child (which we cannot do during init because ldtk plugin does not support it)
+    commands.entity(event.entity).with_children(|parent| {
+        parent.spawn(HurtBoxBundle::new(
+            GameLayers::EnemyHurtBox,
+            GameLayers::PlayerPowerBox,
+            10.,
+            10.,
+        ));
+    });
+
     let attack_range = 700.0;
     let chase_range = 5000.0;
     let attack = Attack {
