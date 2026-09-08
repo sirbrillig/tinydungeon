@@ -1,10 +1,12 @@
+use avian2d::collision::collider::{CollidingEntities, collider_hierarchy::ColliderOf};
 use bevy::prelude::*;
 use std::collections::HashMap;
 
 use crate::{
     GameSet,
     animation::{AnimationKey, AnimationSet, CharacterAnimationClip, SpriteAnimation},
-    attack::HitBoxBundle,
+    attack::{HitBox, HitBoxBundle, HurtBox},
+    enemies::EnemyHurtBox,
     movement::GameLayers,
 };
 
@@ -16,6 +18,7 @@ pub fn powers_plugin(app: &mut App) {
             .chain()
             .in_set(GameSet::Powers),
     );
+    app.add_systems(Update, (detect_hit).chain().in_set(GameSet::Reactions));
 }
 
 // @todo support activating different bells
@@ -106,9 +109,26 @@ fn process_bell(
 ) {
     for (bell, mut active) in query.iter_mut() {
         active.timer.tick(time.delta());
-        // @todo play bell animation
         if active.timer.is_finished() {
             commands.entity(bell).despawn();
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct HitByBell;
+
+fn detect_hit(
+    query: Query<(&CollidingEntities, &ColliderOf), (With<HurtBox>, With<EnemyHurtBox>)>,
+    bells: Query<(), With<RepulsionBell>>,
+    mut commands: Commands,
+) {
+    for (hurtbox, owner) in query.iter() {
+        let enemy = owner.body;
+        for hitbox in hurtbox.iter() {
+            if bells.contains(*hitbox) {
+                commands.entity(enemy).insert(HitByBell);
+            }
         }
     }
 }
