@@ -6,7 +6,7 @@ use crate::ai::tasks::target_in_range::TargetInRange;
 use crate::ai::tasks::wait_until_player_is_near::{DetectionDistance, WaitUntilPlayerIsNear};
 use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
 use crate::attack::HurtBoxBundle;
-use crate::enemies::{EnemyCoreBundle, EnemySettings, HurtsWhenTouched};
+use crate::enemies::{EnemyCoreBundle, EnemyHurtBox, EnemySettings, HurtsWhenTouched};
 use crate::movement::GameLayers;
 use bevy::prelude::*;
 use bevy_behave::behave;
@@ -70,11 +70,14 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
 
     // Add hurt box in a child (which we cannot do during init because ldtk plugin does not support it)
     commands.entity(event.entity).with_children(|parent| {
-        parent.spawn(HurtBoxBundle::new(
-            GameLayers::EnemyHurtBox,
-            GameLayers::PlayerPowerBox,
-            10.,
-            10.,
+        parent.spawn((
+            EnemyHurtBox,
+            HurtBoxBundle::new(
+                GameLayers::EnemyHurtBox,
+                GameLayers::PlayerPowerBox,
+                10.,
+                10.,
+            ),
         ));
     });
 

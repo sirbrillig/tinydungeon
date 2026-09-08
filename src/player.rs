@@ -1,5 +1,5 @@
 use crate::animation::{AnimationKey, AnimationSet, CharacterAnimationClip};
-use crate::attack::HurtBoxBundle;
+use crate::attack::{HitBox, HurtBox, HurtBoxBundle};
 use crate::movement::*;
 use crate::powers::ActivateBell;
 use crate::{GameSet, animation::SpriteAnimation};
@@ -118,11 +118,15 @@ fn on_player_spawned(
     // Add hurt box in a child (which we cannot do during init because ldtk plugin does not support it)
     commands.entity(event.entity).with_children(|parent| {
         parent.spawn((
+            PlayerHurtBox,
             HurtBoxBundle::new(GameLayers::PlayerHurtBox, GameLayers::EnemyHitBox, 10., 14.),
             Transform::from_xyz(0.0, -4.0, 0.0),
         ));
     });
 }
+
+#[derive(Component)]
+pub struct PlayerHurtBox;
 
 #[derive(Component)]
 pub struct GotHit {
@@ -140,17 +144,17 @@ pub struct Invincible {
 }
 
 fn detect_hit(
-    query: Query<&CollidingEntities>,
+    query: Query<&CollidingEntities, (With<HurtBox>, With<PlayerHurtBox>)>,
     player: Single<Entity, With<Player>>,
-    hitters: Query<&ColliderOf>,
+    hitbox_owners: Query<&ColliderOf, With<HitBox>>,
     mut commands: Commands,
 ) {
-    for collider_bodies in query.iter() {
-        for hitbox in collider_bodies.iter() {
-            let Ok(hitbox_collider) = hitters.get(*hitbox) else {
+    for hurtbox in query.iter() {
+        for hitbox in hurtbox.iter() {
+            let Ok(owner) = hitbox_owners.get(*hitbox) else {
                 continue;
             };
-            let enemy = hitbox_collider.body;
+            let enemy = owner.body;
             commands.entity(*player).insert(GotHit { hit_by: enemy });
         }
     }

@@ -23,6 +23,9 @@ const ENEMY_FOOT_RANGE: f32 = 2.0;
 #[derive(Component, Default)]
 pub struct Enemy;
 
+#[derive(Component, Default)]
+pub struct EnemyHurtBox;
+
 #[derive(Component)]
 pub struct HurtsWhenTouched {
     width: f32,
