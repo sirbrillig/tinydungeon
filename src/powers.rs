@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
 use bevy::prelude::*;
+use std::collections::HashMap;
 
 use crate::{
     GameSet,
     animation::{AnimationKey, AnimationSet, CharacterAnimationClip, SpriteAnimation},
+    attack::HitBoxBundle,
+    movement::GameLayers,
 };
 
 pub fn powers_plugin(app: &mut App) {
@@ -73,9 +74,14 @@ fn activate_bell(
         let power_time = 0.2;
         commands.spawn((
             RepulsionBell,
-            // @todo add hitbox for player to enemy that pushes them
             ChildOf(player),
             clip,
+            HitBoxBundle::new(
+                GameLayers::PlayerPowerBox,
+                GameLayers::EnemyHurtBox,
+                20.,
+                20.,
+            ),
             BellBundle {
                 // The timer for the power itself
                 timer: BellActive {
