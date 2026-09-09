@@ -21,6 +21,8 @@ const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
 const PLAYER_FOOT_HEIGHT: f32 = 2.0;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
+const KNOCKBACK_SPEED_X: f32 = 290.0;
+const KNOCKBACK_SPEED_Y: f32 = 110.0;
 
 #[derive(Resource)]
 pub struct PlayerAnimations(AnimationSet);
@@ -161,10 +163,11 @@ fn detect_hit(
 }
 
 fn handle_got_hit(
-    query: Query<(Entity, &GotHit, Has<Invincible>), Added<GotHit>>,
+    query: Query<(Entity, &GotHit, &Transform, Has<Invincible>), Added<GotHit>>,
+    colliders: Query<&Transform, With<LinearVelocity>>,
     mut commands: Commands,
 ) {
-    for (player, hit, invincible) in query.iter() {
+    for (player, hit, player_transform, invincible) in query.iter() {
         commands.entity(player).remove::<GotHit>();
         if invincible {
             continue;
@@ -174,9 +177,18 @@ fn handle_got_hit(
             timer: Timer::from_seconds(0.1, TimerMode::Once),
         });
         // Add Knockback to knock the player back
+        let Ok(enemy_transform) = colliders.get(hit.hit_by) else {
+            continue;
+        };
+        // Calculate horizontal sign (-1.0 for Left, 1.0 for Right)
+        let direction_x = (player_transform.translation.x - enemy_transform.translation.x).signum();
+        let direction = Vec2 {
+            x: direction_x * KNOCKBACK_SPEED_X,
+            y: KNOCKBACK_SPEED_Y, // Small upward pop
+        };
         commands.entity(player).insert(Knockback {
             timer: Timer::from_seconds(0.1, TimerMode::Once),
-            collided_with: hit.hit_by,
+            direction,
         });
         // Make player invincible briefly
         commands.entity(player).insert(Invincible {
@@ -249,7 +261,23 @@ fn move_player(
     let (entity, mut vel, speed, mut coyote) = player.into_inner();
 
     if keyboard_input.just_pressed(KeyCode::KeyZ) {
-        commands.entity(entity).insert(ActivateBell);
+        let bell_force = 300.0;
+        // @todo only do this if touching the ground/wall based on the direction
+        if keyboard_input.pressed(KeyCode::ArrowDown) {
+            commands
+                .entity(entity)
+                .insert(ActivateBell::direction(Vec2 { x: 0., y: -bell_force }));
+        } else if keyboard_input.pressed(KeyCode::ArrowRight) {
+            commands
+                .entity(entity)
+                .insert(ActivateBell::direction(Vec2 { x: bell_force, y: 0. }));
+        } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
+            commands
+                .entity(entity)
+                .insert(ActivateBell::direction(Vec2 { x: -bell_force, y: 0. }));
+        } else {
+            commands.entity(entity).insert(ActivateBell::default());
+        }
     }
 
     vel.x = get_change_for_input(&keyboard_input) * speed.0;

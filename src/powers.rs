@@ -1,7 +1,3 @@
-use avian2d::collision::collider::{CollidingEntities, collider_hierarchy::ColliderOf};
-use bevy::prelude::*;
-use std::collections::HashMap;
-
 use crate::{
     GameSet,
     animation::{AnimationKey, AnimationSet, CharacterAnimationClip, SpriteAnimation},
@@ -10,6 +6,15 @@ use crate::{
     movement::{GameLayers, Knockback},
     player::Player,
 };
+use avian2d::{
+    collision::collider::{CollidingEntities, collider_hierarchy::ColliderOf},
+    dynamics::rigid_body::LinearVelocity,
+};
+use bevy::prelude::*;
+use std::collections::HashMap;
+
+const KNOCKBACK_SPEED_X: f32 = 290.0;
+const KNOCKBACK_SPEED_Y: f32 = 110.0;
 
 pub fn powers_plugin(app: &mut App) {
     app.add_systems(Startup, setup_powers);
@@ -21,18 +26,40 @@ pub fn powers_plugin(app: &mut App) {
     );
     app.add_systems(
         Update,
-        (detect_hit, handle_got_hit)
+        (detect_hit, handle_got_hit, handle_directional_bell)
             .chain()
             .in_set(GameSet::Reactions),
     );
 }
 
-// @todo support activating different bells
 #[derive(Component)]
-pub struct ActivateBell;
+pub struct ActivateBell {
+    pub direction: BellDirection,
+}
+
+impl ActivateBell {
+    pub fn default() -> Self {
+        Self {
+            direction: BellDirection { direction: None },
+        }
+    }
+
+    pub fn direction(direction: Vec2) -> Self {
+        Self {
+            direction: BellDirection {
+                direction: Some(direction),
+            },
+        }
+    }
+}
+
+#[derive(Component, Clone, Copy)]
+pub struct BellDirection {
+    pub direction: Option<Vec2>,
+}
 
 #[derive(Component)]
-pub struct BellActive {
+pub struct BellTimer {
     timer: Timer,
 }
 
@@ -44,7 +71,7 @@ struct BellBundle {
     animation_key: AnimationKey,
     sprite_sheet: Sprite,
     animation: SpriteAnimation,
-    timer: BellActive,
+    timer: BellTimer,
 }
 
 #[derive(Resource)]
@@ -72,18 +99,20 @@ fn setup_powers(
 }
 
 fn activate_bell(
-    query: Query<Entity, Added<ActivateBell>>,
+    query: Query<(Entity, &ActivateBell), Added<ActivateBell>>,
     animations: Res<PowerAnimations>,
     mut commands: Commands,
 ) {
-    for player in query.iter() {
+    for (player, activate) in query.iter() {
         commands.entity(player).remove::<ActivateBell>();
         let clip = animations.0.clone();
         let frames = 10;
         let power_time = 0.2;
+        let direction = activate.direction;
         commands.spawn((
             RepulsionBell,
             ChildOf(player),
+            direction,
             clip,
             HitBoxBundle::new(
                 GameLayers::PlayerPowerBox,
@@ -93,7 +122,7 @@ fn activate_bell(
             ),
             BellBundle {
                 // The timer for the power itself
-                timer: BellActive {
+                timer: BellTimer {
                     timer: Timer::from_seconds(power_time, TimerMode::Once),
                 },
                 animation_key: AnimationKey::Repulsion,
@@ -109,7 +138,7 @@ fn activate_bell(
 }
 
 fn process_bell(
-    mut query: Query<(Entity, &mut BellActive)>,
+    mut query: Query<(Entity, &mut BellTimer)>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
@@ -126,29 +155,59 @@ pub struct HitByBell;
 
 fn detect_hit(
     query: Query<(&CollidingEntities, &ColliderOf), (With<HurtBox>, With<EnemyHurtBox>)>,
-    bells: Query<(), With<RepulsionBell>>,
+    bells: Query<&BellDirection, With<RepulsionBell>>,
     mut commands: Commands,
 ) {
     for (hurtbox, owner) in query.iter() {
         let enemy = owner.body;
         for hitbox in hurtbox.iter() {
-            if bells.contains(*hitbox) {
+            let Ok(direction) = bells.get(*hitbox) else {
+                continue;
+            };
+            if direction.direction.is_none() {
                 commands.entity(enemy).insert(HitByBell);
             }
         }
     }
 }
 
-fn handle_got_hit(
-    query: Query<Entity, Added<HitByBell>>,
+fn handle_directional_bell(
+    bells: Query<&BellDirection, (With<RepulsionBell>, Added<RepulsionBell>)>,
     player: Single<Entity, With<Player>>,
     mut commands: Commands,
 ) {
-    for enemy in query.iter() {
+    for direction in bells.iter() {
+        let Some(dir) = direction.direction else {
+            continue;
+        };
+        commands.entity(*player).insert(Knockback {
+            timer: Timer::from_seconds(0.1, TimerMode::Once),
+            direction: -dir,
+        });
+    }
+}
+
+fn handle_got_hit(
+    query: Query<(Entity, &Transform), Added<HitByBell>>,
+    colliders: Query<&Transform, With<LinearVelocity>>,
+    player: Single<Entity, With<Player>>,
+    mut commands: Commands,
+) {
+    for (enemy, target_transform) in query.iter() {
         commands.entity(enemy).remove::<HitByBell>();
+        let Ok(source_transform) = colliders.get(*player) else {
+            continue;
+        };
+        // Calculate horizontal sign (-1.0 for Left, 1.0 for Right)
+        let direction_x =
+            (target_transform.translation.x - source_transform.translation.x).signum();
+        let direction = Vec2 {
+            x: direction_x * KNOCKBACK_SPEED_X,
+            y: KNOCKBACK_SPEED_Y, // Small upward pop
+        };
         commands.entity(enemy).insert(Knockback {
             timer: Timer::from_seconds(0.1, TimerMode::Once),
-            collided_with: *player,
+            direction,
         });
     }
 }

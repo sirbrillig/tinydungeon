@@ -6,9 +6,6 @@ use bevy::prelude::*;
 
 pub struct MovementPlugin;
 
-const KNOCKBACK_SPEED_X: f32 = 290.0;
-const KNOCKBACK_SPEED_Y: f32 = 110.0;
-
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
@@ -54,7 +51,7 @@ pub struct IntendedXVelocity(pub f32);
 #[derive(Component)]
 pub struct Knockback {
     pub timer: Timer,
-    pub collided_with: Entity,
+    pub direction: Vec2,
 }
 
 #[derive(Component, Default)]
@@ -100,26 +97,19 @@ impl CoyoteTimer {
 }
 
 fn handle_knockback(
-    mut query: Query<(&mut LinearVelocity, &mut Knockback, &Transform, Entity)>,
-    colliders: Query<&Transform, With<LinearVelocity>>,
+    mut query: Query<(&mut LinearVelocity, &mut Knockback, Entity)>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    for (mut vel, mut knock, player_transform, entity) in query.iter_mut() {
+    for (mut vel, mut knock, entity) in query.iter_mut() {
         if knock.timer.is_finished() {
             vel.x = 0.0;
             commands.entity(entity).remove::<Knockback>();
             continue;
         }
         knock.timer.tick(time.delta());
-
-        let Ok(enemy_transform) = colliders.get(knock.collided_with) else {
-            continue;
-        };
-        // Calculate horizontal sign (-1.0 for Left, 1.0 for Right)
-        let direction_x = (player_transform.translation.x - enemy_transform.translation.x).signum();
-        vel.x = direction_x * KNOCKBACK_SPEED_X;
-        vel.y = KNOCKBACK_SPEED_Y; // Small upward pop
+        vel.x = knock.direction.x;
+        vel.y = knock.direction.y;
     }
 }
 
