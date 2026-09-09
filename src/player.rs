@@ -261,20 +261,19 @@ fn move_player(
     let (entity, mut vel, speed, mut coyote) = player.into_inner();
 
     if keyboard_input.just_pressed(KeyCode::KeyZ) {
-        let bell_force = 300.0;
         // @todo only do this if touching the ground/wall based on the direction
         if keyboard_input.pressed(KeyCode::ArrowDown) {
             commands
                 .entity(entity)
-                .insert(ActivateBell::direction(Vec2 { x: 0., y: -bell_force }));
+                .insert(ActivateBell::direction(Vec2::NEG_Y));
         } else if keyboard_input.pressed(KeyCode::ArrowRight) {
             commands
                 .entity(entity)
-                .insert(ActivateBell::direction(Vec2 { x: bell_force, y: 0. }));
+                .insert(ActivateBell::direction(Vec2::X));
         } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
             commands
                 .entity(entity)
-                .insert(ActivateBell::direction(Vec2 { x: -bell_force, y: 0. }));
+                .insert(ActivateBell::direction(Vec2::NEG_X));
         } else {
             commands.entity(entity).insert(ActivateBell::default());
         }

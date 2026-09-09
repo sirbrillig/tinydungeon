@@ -176,13 +176,14 @@ fn handle_directional_bell(
     player: Single<Entity, With<Player>>,
     mut commands: Commands,
 ) {
+    let bell_force = 300.0;
     for direction in bells.iter() {
         let Some(dir) = direction.direction else {
             continue;
         };
         commands.entity(*player).insert(Knockback {
             timer: Timer::from_seconds(0.1, TimerMode::Once),
-            direction: -dir,
+            direction: -dir * bell_force,
         });
     }
 }
