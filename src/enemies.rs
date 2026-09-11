@@ -3,6 +3,7 @@ use crate::attack::HitBoxBundle;
 use crate::movement::*;
 use crate::player::Player;
 use crate::{ai::tasks::move_toward_entity::ChaseTarget, animation::AnimationKey};
+use avian2d::spatial_query::SpatialQueryFilter;
 use avian2d::{
     collision::collider::{Collider, CollisionLayers},
     dynamics::rigid_body::{Friction, LockedAxes, RigidBody},
@@ -80,15 +81,18 @@ impl EnemyCoreBundle {
         Self {
             collider: Collider::rectangle(16., settings.sprite_height),
             speed: MovementSpeed(settings.speed),
-            ground_detector: ShapeCaster::new(
-                Collider::rectangle(14., settings.ground_detector_height),
-                // Put detector at the feet
-                Vec2 {
-                    x: 0.0,
-                    y: settings.ground_detector_anchor,
-                },
-                0.0,
-                Dir2::NEG_Y,
+            ground_detector: ShapeCaster::with_query_filter(
+                ShapeCaster::new(
+                    Collider::rectangle(14., settings.ground_detector_height),
+                    // Put detector at the feet
+                    Vec2 {
+                        x: 0.0,
+                        y: settings.ground_detector_anchor,
+                    },
+                    0.0,
+                    Dir2::NEG_Y,
+                ),
+                SpatialQueryFilter::from_mask(GameLayers::Environment),
             )
             .with_max_distance(settings.ground_detector_range),
             // Anchor is down a bit because sprite is not vertically centered

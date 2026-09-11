@@ -5,6 +5,7 @@ use crate::powers::ActivateBell;
 use crate::{GameSet, animation::SpriteAnimation};
 use avian2d::collision::collider::collider_hierarchy::ColliderOf;
 use avian2d::collision::collider::{CollidingEntities, CollisionLayers};
+use avian2d::spatial_query::SpatialQueryFilter;
 use avian2d::{
     collision::collider::Collider,
     dynamics::rigid_body::{Friction, LinearVelocity, LockedAxes, RigidBody},
@@ -69,15 +70,18 @@ impl Default for PlayerBundle {
             speed: MovementSpeed(90.0),
             ground_detection: GroundDetection,
             coyote_time: CoyoteTimer::default(),
-            ground_detector: ShapeCaster::new(
-                Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
-                // Put detector at the player's feet
-                Vec2 {
-                    x: 0.0,
-                    y: PLAYER_FOOT_ANCHOR,
-                },
-                0.0,
-                Dir2::NEG_Y,
+            ground_detector: ShapeCaster::with_query_filter(
+                ShapeCaster::new(
+                    Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
+                    // Put detector at the player's feet
+                    Vec2 {
+                        x: 0.0,
+                        y: PLAYER_FOOT_ANCHOR,
+                    },
+                    0.0,
+                    Dir2::NEG_Y,
+                ),
+                SpatialQueryFilter::from_mask(GameLayers::Environment),
             )
             .with_max_distance(PLAYER_FOOT_RANGE),
             axes: LockedAxes::ROTATION_LOCKED,
@@ -245,6 +249,20 @@ fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
     }
 }
 
+fn get_input_direction(keyboard_input: &ButtonInput<KeyCode>, on_ground: bool) -> Option<Vec2> {
+    if keyboard_input.pressed(KeyCode::ArrowDown) && on_ground {
+        Some(Vec2::NEG_Y)
+    } else if keyboard_input.pressed(KeyCode::ArrowRight) {
+        // @todo only do this if touching the wall based on the direction
+        Some(Vec2::X)
+    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
+        // @todo only do this if touching the wall based on the direction
+        Some(Vec2::NEG_X)
+    } else {
+        None
+    }
+}
+
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     player: Single<
@@ -253,27 +271,19 @@ fn move_player(
             &mut LinearVelocity,
             &MovementSpeed,
             &mut CoyoteTimer,
+            Has<OnGround>,
         ),
         (With<Player>, Without<CannotMove>),
     >,
     mut commands: Commands,
 ) {
-    let (entity, mut vel, speed, mut coyote) = player.into_inner();
+    let (entity, mut vel, speed, mut coyote, on_ground) = player.into_inner();
 
     if keyboard_input.just_pressed(KeyCode::KeyZ) {
-        // @todo only do this if touching the ground/wall based on the direction
-        if keyboard_input.pressed(KeyCode::ArrowDown) {
+        if let Some(direction) = get_input_direction(&keyboard_input, on_ground) {
             commands
                 .entity(entity)
-                .insert(ActivateBell::direction(Vec2::NEG_Y));
-        } else if keyboard_input.pressed(KeyCode::ArrowRight) {
-            commands
-                .entity(entity)
-                .insert(ActivateBell::direction(Vec2::X));
-        } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
-            commands
-                .entity(entity)
-                .insert(ActivateBell::direction(Vec2::NEG_X));
+                .insert(ActivateBell::direction(direction));
         } else {
             commands.entity(entity).insert(ActivateBell::default());
         }
