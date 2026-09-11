@@ -98,11 +98,19 @@ fn setup_camera(mut commands: Commands) {
 fn follow_camera(
     players: Query<&Transform, With<Player>>,
     mut cameras: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+    time: Res<Time>,
 ) {
     for player in players.iter() {
         for mut camera in cameras.iter_mut() {
-            camera.translation.x = player.translation.x;
-            camera.translation.y = player.translation.y;
+            // Keep the camera's own z coord.
+            let target = Vec3::new(
+                player.translation.x,
+                player.translation.y,
+                camera.translation.z,
+            );
+            camera
+                .translation
+                .smooth_nudge(&target, 13.9, time.delta_secs());
         }
     }
 }
