@@ -19,6 +19,7 @@ const ENEMY_HEIGHT_ANCHOR_OFFSET: f32 = 0.01;
 const ENEMY_FOOT_HEIGHT: f32 = 2.0;
 const ENEMY_FOOT_ANCHOR: f32 = -(ENEMY_HEIGHT / 2.) + (ENEMY_FOOT_HEIGHT / 2.);
 const ENEMY_FOOT_RANGE: f32 = 2.0;
+const CHASE_RANGE: f32 = 5000.0;
 
 #[derive(Component, Default)]
 pub struct Orc;
@@ -38,7 +39,7 @@ impl Default for OrcBundle {
         Self {
             orc: Orc,
             sprite_sheet: Sprite::default(),
-            detection_distance: DetectionDistance(3500.0),
+            detection_distance: DetectionDistance(CHASE_RANGE),
             core: EnemyCoreBundle::with_settings(EnemySettings {
                 sprite_height: ENEMY_HEIGHT,
                 sprite_height_offset: ENEMY_HEIGHT_ANCHOR_OFFSET,
@@ -82,7 +83,6 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
     });
 
     let attack_range = 700.0;
-    let chase_range = 5000.0;
     let attack = Attack {
         duration_secs: 1.5,
         active_frames: (3..5).into(),
@@ -103,9 +103,9 @@ fn on_spawned(event: On<Add, Orc>, mut commands: Commands, animations: Res<OrcAn
                    Behave::spawn_named("Attack", attack),
                 },
                 Behave::Sequence => {
-                    Behave::spawn_named("Is player in chase range", TargetInRange {range: chase_range}),
+                    Behave::spawn_named("Is player in chase range", TargetInRange {range: CHASE_RANGE}),
                     Behave::spawn_named("Face player", FaceTarget),
-                    Behave::spawn_named("Move toward player", MoveTowardEntity {near_distance: attack_range, far_distance: chase_range}),
+                    Behave::spawn_named("Move toward player", MoveTowardEntity {near_distance: attack_range, far_distance: CHASE_RANGE}),
                 },
                 Behave::spawn_named("Is player in at least chase range", WaitUntilPlayerIsNear),
             }
