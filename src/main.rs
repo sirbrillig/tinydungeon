@@ -25,6 +25,8 @@ use player::PlayerPlugin;
 use powers::powers_plugin;
 use wall::WallPlugin;
 
+use crate::player::Player;
+
 #[derive(SystemSet, Debug, Hash, Eq, PartialEq, Clone)]
 pub enum GameSet {
     Input,
@@ -39,6 +41,10 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup_world, setup_camera));
+        app.add_systems(
+            PostUpdate,
+            follow_camera.before(TransformSystems::Propagate),
+        );
         app.add_plugins((
             LdtkPlugin,
             BehavePlugin::default(),
@@ -81,12 +87,24 @@ fn setup_camera(mut commands: Commands) {
         Transform::from_xyz(304.0, 232.0, 0.0),
         Projection::Orthographic(OrthographicProjection {
             scaling_mode: bevy::camera::ScalingMode::AutoMin {
-                min_width: 608.0,
-                min_height: 464.0,
+                min_width: 320.0,
+                min_height: 240.0,
             },
             ..OrthographicProjection::default_2d()
         }),
     ));
+}
+
+fn follow_camera(
+    players: Query<&Transform, With<Player>>,
+    mut cameras: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+) {
+    for player in players.iter() {
+        for mut camera in cameras.iter_mut() {
+            camera.translation.x = player.translation.x;
+            camera.translation.y = player.translation.y;
+        }
+    }
 }
 
 fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
