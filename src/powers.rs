@@ -117,8 +117,8 @@ fn activate_bell(
             HitBoxBundle::new(
                 GameLayers::PlayerPowerBox,
                 GameLayers::EnemyHurtBox,
-                40.,
-                40.,
+                45.,
+                45.,
             ),
             BellBundle {
                 // The timer for the power itself
