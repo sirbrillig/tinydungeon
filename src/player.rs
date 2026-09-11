@@ -45,6 +45,7 @@ struct PlayerBundle {
     layers: CollisionLayers,
     collider: Collider,
     speed: MovementSpeed,
+    // @todo add wall detection
     ground_detection: GroundDetection,
     coyote_time: CoyoteTimer,
     ground_detector: ShapeCaster,
@@ -252,12 +253,12 @@ fn get_change_for_input(keyboard_input: &ButtonInput<KeyCode>) -> f32 {
 fn get_input_direction(keyboard_input: &ButtonInput<KeyCode>, on_ground: bool) -> Option<Vec2> {
     if keyboard_input.pressed(KeyCode::ArrowDown) && on_ground {
         Some(Vec2::NEG_Y)
-    } else if keyboard_input.pressed(KeyCode::ArrowRight) {
-        // @todo only do this if touching the wall based on the direction
-        Some(Vec2::X)
-    } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        // @todo only do this if touching the wall based on the direction
-        Some(Vec2::NEG_X)
+    // @todo disabled until we have wall detection
+    // } else if keyboard_input.pressed(KeyCode::ArrowRight) {
+    //     Some(Vec2::X)
+    // } else if keyboard_input.pressed(KeyCode::ArrowLeft) {
+    //     // @todo only do this if touching the wall based on the direction
+    //     Some(Vec2::NEG_X)
     } else {
         None
     }
