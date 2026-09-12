@@ -1,6 +1,8 @@
 use crate::GameSet;
+use avian2d::collision::collider::Collider;
 use avian2d::{
-    dynamics::rigid_body::LinearVelocity, prelude::PhysicsLayer, spatial_query::ShapeHits,
+    collision::collider::CollisionLayers, dynamics::rigid_body::LinearVelocity,
+    prelude::PhysicsLayer, spatial_query::ShapeHits,
 };
 use bevy::prelude::*;
 
@@ -21,6 +23,26 @@ impl Plugin for MovementPlugin {
         );
         app.add_systems(Update, determine_movement_state.in_set(GameSet::PostInput));
         app.add_systems(Update, handle_knockback.in_set(GameSet::Reactions));
+    }
+}
+
+#[derive(Component, Default)]
+pub struct EnvCollider;
+
+#[derive(Bundle)]
+pub struct EnvColliderBundle {
+    pub env_collider: EnvCollider,
+    pub layers: CollisionLayers,
+    pub collider: Collider,
+}
+
+impl EnvColliderBundle {
+    pub fn new(layer: GameLayers, other_layer: GameLayers, width: f32, height: f32) -> Self {
+        Self {
+            env_collider: EnvCollider,
+            layers: CollisionLayers::new(layer, [other_layer]),
+            collider: Collider::rectangle(width, height),
+        }
     }
 }
 

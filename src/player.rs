@@ -3,8 +3,8 @@ use crate::attack::{HitBox, HurtBox, HurtBoxBundle};
 use crate::movement::*;
 use crate::powers::ActivateBell;
 use crate::{GameSet, animation::SpriteAnimation};
+use avian2d::collision::collider::CollidingEntities;
 use avian2d::collision::collider::collider_hierarchy::ColliderOf;
-use avian2d::collision::collider::{CollidingEntities, CollisionLayers};
 use avian2d::spatial_query::SpatialQueryFilter;
 use avian2d::{
     collision::collider::Collider,
@@ -17,8 +17,10 @@ use std::collections::HashMap;
 
 const PLAYER_JUMP_SPEED: f32 = 255.0;
 const PLAYER_JUMP_CUT_SPEED: f32 = 190.0;
-pub const PLAYER_HEIGHT: f32 = 20.0;
-const PLAYER_HEIGHT_ANCHOR_OFFSET: f32 = 0.03;
+const PLAYER_HEIGHT: f32 = 20.0;
+const PLAYER_WIDTH: f32 = 12.0;
+const PLAYER_HEAD_CLEARANCE: f32 = 4.0;
+const PLAYER_SPRITE_ANCHOR_OFFSET: f32 = 0.05;
 const PLAYER_FOOT_HEIGHT: f32 = 2.0;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
@@ -42,8 +44,6 @@ struct PlayerBundle {
     worldly: Worldly,
     body: RigidBody,
     friction: Friction,
-    layers: CollisionLayers,
-    collider: Collider,
     speed: MovementSpeed,
     // @todo add wall detection
     ground_detection: GroundDetection,
@@ -66,8 +66,6 @@ impl Default for PlayerBundle {
             body: RigidBody::Dynamic,
             friction: Friction::ZERO
                 .with_combine_rule(avian2d::dynamics::rigid_body::CoefficientCombine::Min),
-            layers: CollisionLayers::new(GameLayers::Player, [GameLayers::Environment]),
-            collider: Collider::rectangle(16., PLAYER_HEIGHT),
             speed: MovementSpeed(90.0),
             ground_detection: GroundDetection,
             coyote_time: CoyoteTimer::default(),
@@ -87,7 +85,7 @@ impl Default for PlayerBundle {
             .with_max_distance(PLAYER_FOOT_RANGE),
             axes: LockedAxes::ROTATION_LOCKED,
             // Anchor is down a bit because sprite is not vertically centered
-            anchor: Anchor(Vec2::new(0.0, PLAYER_HEIGHT_ANCHOR_OFFSET)),
+            anchor: Anchor(Vec2::new(0.0, PLAYER_SPRITE_ANCHOR_OFFSET)),
             animation: SpriteAnimation {
                 frames: 6,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
@@ -122,7 +120,18 @@ fn on_player_spawned(
     // Add player animation map (must do in a System so we can access World things like commands)
     commands.entity(event.entity).insert(animations.0.clone());
 
-    // Add hurt box in a child (which we cannot do during init because ldtk plugin does not support it)
+    // Add colliders in a child (which we cannot do during init because ldtk plugin does not support it)
+    commands.entity(event.entity).with_children(|parent| {
+        parent.spawn((
+            EnvColliderBundle::new(
+                GameLayers::Player,
+                GameLayers::Environment,
+                PLAYER_WIDTH,
+                PLAYER_HEIGHT - PLAYER_HEAD_CLEARANCE,
+            ),
+            Transform::from_xyz(0.0, -PLAYER_HEAD_CLEARANCE, 0.0),
+        ));
+    });
     commands.entity(event.entity).with_children(|parent| {
         parent.spawn((
             PlayerHurtBox,

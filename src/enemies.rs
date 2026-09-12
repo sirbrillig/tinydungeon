@@ -40,6 +40,7 @@ pub struct EnemyCoreBundle {
     animation_key: AnimationKey,
     body: RigidBody,
     friction: Friction,
+    // @todo use EnvCollider child like Player
     layers: CollisionLayers,
     collider: Collider,
     speed: MovementSpeed,
