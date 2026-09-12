@@ -21,6 +21,7 @@ const PLAYER_JUMP_CUT_SPEED: f32 = 190.0;
 const PLAYER_HEIGHT: f32 = 20.0;
 const PLAYER_WIDTH: f32 = 12.0;
 const PLAYER_HEAD_CLEARANCE: f32 = 4.0;
+const PLAYER_ENV_COLLIDER_HEIGHT: f32 = 14.0;
 const PLAYER_SPRITE_ANCHOR_OFFSET: f32 = 0.05;
 const PLAYER_FOOT_HEIGHT: f32 = 1.5;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
@@ -72,7 +73,7 @@ impl Default for PlayerBundle {
             coyote_time: CoyoteTimer::default(),
             ground_detector: ShapeCaster::with_query_filter(
                 ShapeCaster::new(
-                    Collider::rectangle(10., PLAYER_FOOT_HEIGHT),
+                    Collider::rectangle(8., PLAYER_FOOT_HEIGHT),
                     // Put detector at the player's feet
                     Vec2 {
                         x: 0.0,
@@ -128,12 +129,14 @@ fn on_player_spawned(
                 GameLayers::Player,
                 GameLayers::Environment,
                 PLAYER_WIDTH,
-                PLAYER_HEIGHT - PLAYER_HEAD_CLEARANCE,
+                // Note: this must not be the same height as a tile or it will cause strange
+                // ghost collisions.
+                PLAYER_ENV_COLLIDER_HEIGHT,
             ),
             Transform::from_xyz(0.0, -PLAYER_HEAD_CLEARANCE, 0.0),
             // SpeculativeMargin puts a cap on avian2d's contact preditiction so that we don't hit
             // imaginary planes when jumping.
-            SpeculativeMargin(0.0),
+            SpeculativeMargin(1.0),
         ));
     });
     commands.entity(event.entity).with_children(|parent| {
