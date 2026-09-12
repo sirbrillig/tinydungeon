@@ -133,7 +133,7 @@ fn on_player_spawned(
             Transform::from_xyz(0.0, -PLAYER_HEAD_CLEARANCE, 0.0),
             // SpeculativeMargin puts a cap on avian2d's contact preditiction so that we don't hit
             // imaginary planes when jumping.
-            SpeculativeMargin(1.0),
+            SpeculativeMargin(0.0),
         ));
     });
     commands.entity(event.entity).with_children(|parent| {
