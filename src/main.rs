@@ -12,7 +12,7 @@ mod wall;
 use animation::AnimationPlugin;
 use avian2d::{
     PhysicsPlugins,
-    debug_render::{PhysicsDebugPlugin, PhysicsGizmos},
+    debug_render::{ContactGizmoScale, PhysicsDebugPlugin, PhysicsGizmos},
     dynamics::integrator::Gravity,
 };
 use bevy::prelude::*;
@@ -59,7 +59,23 @@ impl Plugin for GamePlugin {
             powers_plugin,
         ));
         app.insert_gizmo_config(
-            PhysicsGizmos::default().without_axes(),
+            PhysicsGizmos {
+                contact_normal_scale: ContactGizmoScale::Constant(8.0),
+                contact_normal_color: Some(Color::srgb(0.0, 1.1, 0.1)),
+                contact_point_color: Some(Color::srgb(0.0, 1.0, 1.0)),
+                axis_lengths: None,
+                aabb_color: None,
+                collider_tree_color: None,
+                island_color: None,
+                raycast_color: None,
+                shapecast_shape_color: None,
+                shapecast_normal_color: None,
+                shapecast_point_color: None,
+                collider_color: Some(Color::srgb(0.4, 0.6, 1.0)),
+                shapecast_color: None,
+                sleeping_color_multiplier: Some([1.0, 1.0, 0.4, 1.0]),
+                ..default()
+            },
             GizmoConfig {
                 enabled: false,
                 ..default()
