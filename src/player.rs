@@ -5,6 +5,7 @@ use crate::powers::ActivateBell;
 use crate::{GameSet, animation::SpriteAnimation};
 use avian2d::collision::collider::CollidingEntities;
 use avian2d::collision::collider::collider_hierarchy::ColliderOf;
+use avian2d::dynamics::ccd::SpeculativeMargin;
 use avian2d::spatial_query::SpatialQueryFilter;
 use avian2d::{
     collision::collider::Collider,
@@ -130,6 +131,9 @@ fn on_player_spawned(
                 PLAYER_HEIGHT - PLAYER_HEAD_CLEARANCE,
             ),
             Transform::from_xyz(0.0, -PLAYER_HEAD_CLEARANCE, 0.0),
+            // SpeculativeMargin puts a cap on avian2d's contact preditiction so that we don't hit
+            // imaginary planes when jumping.
+            SpeculativeMargin(1.0),
         ));
     });
     commands.entity(event.entity).with_children(|parent| {
