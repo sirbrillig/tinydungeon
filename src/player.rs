@@ -22,7 +22,7 @@ const PLAYER_HEIGHT: f32 = 20.0;
 const PLAYER_WIDTH: f32 = 12.0;
 const PLAYER_HEAD_CLEARANCE: f32 = 4.0;
 const PLAYER_SPRITE_ANCHOR_OFFSET: f32 = 0.05;
-const PLAYER_FOOT_HEIGHT: f32 = 2.0;
+const PLAYER_FOOT_HEIGHT: f32 = 1.5;
 const PLAYER_FOOT_ANCHOR: f32 = -(PLAYER_HEIGHT / 2.) + (PLAYER_FOOT_HEIGHT / 2.);
 const PLAYER_FOOT_RANGE: f32 = 2.0;
 const KNOCKBACK_SPEED_X: f32 = 290.0;
@@ -72,7 +72,7 @@ impl Default for PlayerBundle {
             coyote_time: CoyoteTimer::default(),
             ground_detector: ShapeCaster::with_query_filter(
                 ShapeCaster::new(
-                    Collider::rectangle(14., PLAYER_FOOT_HEIGHT),
+                    Collider::rectangle(10., PLAYER_FOOT_HEIGHT),
                     // Put detector at the player's feet
                     Vec2 {
                         x: 0.0,

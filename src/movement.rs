@@ -101,7 +101,7 @@ pub struct CoyoteTimer {
 
 impl Default for CoyoteTimer {
     fn default() -> Self {
-        let mut timer = Timer::from_seconds(0.15, TimerMode::Once);
+        let mut timer = Timer::from_seconds(0.1, TimerMode::Once);
         // Start completed so it has to be started explicitly.
         timer.tick(timer.remaining());
         CoyoteTimer { timer }
